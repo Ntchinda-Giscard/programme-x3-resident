@@ -1,0 +1,94 @@
+{
+  "name": "your-app-name",
+  "version": "1.0.0",
+  "description": "Your app description",
+  "author": "Your Name",
+  "license": "MIT",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev:next": "cd frontend && npm run dev",
+    "dev:electron": "electron .",
+    "dev": "concurrently \"npm run dev:next\" \"wait-on http://localhost:3000 && npm run dev:electron\"",
+    "build:next": "cd frontend && npm run build",
+    "build:backend": "node build-backend.js",
+    "prebuild:electron": "node -e \"console.log('Files before build:'); const fs = require('fs'); console.log('electron/main.js exists:', fs.existsSync('electron/main.js')); console.log('frontend/out exists:', fs.existsSync('frontend/out'));\"",
+    "build": "npm run build:next && npm run build:electron",
+    "build:electron": "electron-builder --dir",
+    "dist": "npm run build:next && electron-builder",
+    "dist:win": "npm run build:next && electron-builder --win",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.yourcompany.yourapp",
+    "productName": "YourApp",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "frontend/out/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "backend/dist/api.exe",
+        "to": "backend/api.exe",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "windows-service",
+        "to": "windows-service",
+        "filter": [
+          "**/*",
+          "!__pycache__"
+        ]
+      }
+    ],
+    "asarUnpack": [
+      "frontend/out/**/*",
+      "backend/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "build/icon.png",
+      "category": "Utility"
+    }
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^38.3.0",
+    "electron-builder": "^26.0.12",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "electron-is-dev": "^2.0.0"
+  }
+}
