@@ -1,11 +1,13 @@
 // main.js - Electron Main Process
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const isDev = require("electron-is-dev");
 const isWindows = process.platform === "win32";
 const backendDir = path.join(__dirname, "..", "backend"); // Go up one level from electron folder
+
+let mainWindow;
 
 // Enhanced logging system
 const logFile = path.join(
