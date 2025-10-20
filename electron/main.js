@@ -241,3 +241,76 @@ ipcMain.handle("select-folder", async () => {
   }
   return null;
 });
+
+function startBackend() {
+  return new Promise((resolve, reject) => {
+    log("info", "Starting backend server");
+
+    if (isDev) {
+      log("info", "Development mode: assuming backend is running separately");
+      resolve();
+      return;
+    }
+
+    const exePath = getResourcePath(path.join("backend", "main.exe"));
+    log("info", `Backend executable path: ${exePath}`);
+
+    if (!fs.existsSync(exePath)) {
+      const error = `Backend executable not found at: ${exePath}`;
+      log("error", error);
+      reject(new Error(error));
+      return;
+    }
+
+    log("info", "Starting backend process");
+
+    // Enhanced spawn options for better process management
+    backendProcess = spawn(exePath, [], {
+      cwd: path.dirname(exePath),
+      stdio: ["pipe", "pipe", "pipe"],
+      detached: false, // Keep attached for better cleanup
+      windowsHide: true, // Hide console window on Windows
+      env: {
+        ...process.env,
+        PORT: BACKEND_PORT.toString(),
+        HOST: "127.0.0.1",
+      },
+    });
+
+    // Enhanced process tracking
+    trackedProcesses.set(backendProcess.pid, {
+      process: backendProcess,
+      cleanup: () => {
+        log("info", "Cleaning up backend process");
+      },
+    });
+
+    backendProcess.stdout.on("data", (data) => {
+      log("backend", data.toString().trim());
+    });
+
+    backendProcess.stderr.on("data", (data) => {
+      log("backend-err", data.toString().trim());
+    });
+
+    backendProcess.on("error", (err) => {
+      log("error", "Backend process error", err);
+      trackedProcesses.delete(backendProcess.pid);
+      reject(err);
+    });
+
+    backendProcess.on("exit", (code, signal) => {
+      log(
+        "warn",
+        `Backend process exited with code ${code}, signal: ${signal}`
+      );
+      trackedProcesses.delete(backendProcess.pid);
+    });
+
+    // Improved startup detection
+    setTimeout(() => {
+      log("info", "Backend startup timeout reached, assuming ready");
+      resolve();
+    }, 5000);
+  });
+}
