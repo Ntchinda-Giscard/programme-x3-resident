@@ -12,7 +12,7 @@ class DatabaseConfiguration(Base):
     __tablename__ = "database_configuration"
     id = Column(Integer, primary_key=True, index=True)
     host = Column(String, unique=True, index=True)
-    port = Column(String)
+    port = Column(Integer)
     name = Column(String)
     user = Column(String)
     password = Column(String)
