@@ -18,4 +18,4 @@ def save_folder_settings(folder_settings: FolderSettings, db: Session = get_db()
     db.refresh()
     db.close()
 
-    return folder_settings
+    return FolderSettings(source=new_config.source, destination=new_config.destination)
