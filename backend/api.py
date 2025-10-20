@@ -1,8 +1,7 @@
 # python-backend/api.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import service_manager
+from src.service.controller import folder_router
 
 app = FastAPI(
     title="Service Manager API",
@@ -18,6 +17,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(folder_router)
 
 @app.get("/")
 def read_root():
