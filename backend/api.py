@@ -1,7 +1,7 @@
 # python-backend/api.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from src.service.controller import folder_router
+from src.configs.controller import folder_router
 
 app = FastAPI(
     title="Service Manager API",
