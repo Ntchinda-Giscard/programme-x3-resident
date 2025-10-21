@@ -52,6 +52,7 @@
       "backend/**/*"
     ],
     "win": {
+      "requestedExecutionLevel": "requireAdministrator",
       "target": [
         {
           "target": "nsis",

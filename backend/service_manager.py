@@ -2,6 +2,7 @@
 import subprocess
 import win32serviceutil
 import os
+import sys
 
 SERVICE_NAME = "YourAppService"
 SERVICE_DISPLAY_NAME = "Your App Background Service"
@@ -12,7 +13,7 @@ def install_service():
     service_script = os.path.join(os.path.dirname(__file__), 'src', 'windows-service', 'service.py')
     
     cmd = [
-        'python',
+        sys.executable,
         service_script,
         '--startup=auto',
         'install'

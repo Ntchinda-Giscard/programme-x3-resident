@@ -35,3 +35,6 @@
 2025-10-21 17:17:48,087 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 51 - MainThread
 2025-10-21 17:19:09,801 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
 2025-10-21 17:19:09,806 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-21 17:42:40,155 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-21 17:42:40,159 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-21 17:45:11,479 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
