@@ -9,6 +9,81 @@ const backendDir = path.join(__dirname, "..", "backend"); // Go up one level fro
 
 let mainWindow;
 
+const BACKEND_PORT = isDev ? 5000 : 5000;
+
+function startBackend() {
+  return new Promise((resolve, reject) => {
+    log("info", "Starting backend server");
+
+    if (isDev) {
+      log("info", "Development mode: assuming backend is running separately");
+      resolve();
+      return;
+    }
+
+    const exePath = getResourcePath(path.join("backend", "main.exe"));
+    log("info", `Backend executable path: ${exePath}`);
+
+    if (!fs.existsSync(exePath)) {
+      const error = `Backend executable not found at: ${exePath}`;
+      log("error", error);
+      reject(new Error(error));
+      return;
+    }
+
+    log("info", "Starting backend process");
+
+    // Enhanced spawn options for better process management
+    backendProcess = spawn(exePath, [], {
+      cwd: path.dirname(exePath),
+      stdio: ["pipe", "pipe", "pipe"],
+      detached: false, // Keep attached for better cleanup
+      windowsHide: true, // Hide console window on Windows
+      env: {
+        ...process.env,
+        PORT: BACKEND_PORT.toString(),
+        HOST: "127.0.0.1",
+      },
+    });
+
+    // Enhanced process tracking
+    trackedProcesses.set(backendProcess.pid, {
+      process: backendProcess,
+      cleanup: () => {
+        log("info", "Cleaning up backend process");
+      },
+    });
+
+    backendProcess.stdout.on("data", (data) => {
+      log("backend", data.toString().trim());
+    });
+
+    backendProcess.stderr.on("data", (data) => {
+      log("backend-err", data.toString().trim());
+    });
+
+    backendProcess.on("error", (err) => {
+      log("error", "Backend process error", err);
+      trackedProcesses.delete(backendProcess.pid);
+      reject(err);
+    });
+
+    backendProcess.on("exit", (code, signal) => {
+      log(
+        "warn",
+        `Backend process exited with code ${code}, signal: ${signal}`
+      );
+      trackedProcesses.delete(backendProcess.pid);
+    });
+
+    // Improved startup detection
+    setTimeout(() => {
+      log("info", "Backend startup timeout reached, assuming ready");
+      resolve();
+    }, 5000);
+  });
+}
+
 // Enhanced logging system
 const logFile = path.join(
   isDev ? __dirname : path.dirname(app.getPath("exe")),
@@ -36,91 +111,274 @@ function log(level, message, data = null) {
   }
 }
 
-function buildBackend() {
-  log("info", "Starting backend build process");
-  log("info", "Backend directory: " + backendDir);
-  log("info", "Directory exists: " + fs.existsSync(backendDir));
-
-  // Check multiple possible Python paths
-  const possiblePaths = isWindows
-    ? [
-        path.join(backendDir, "venv", "Scripts", "python.exe"),
-        path.join(backendDir, ".venv", "Scripts", "python.exe"),
-        "python", // Fallback to system Python
-      ]
-    : [
-        path.join(backendDir, "venv", "bin", "python"),
-        path.join(backendDir, ".venv", "bin", "python"),
-        "python3",
-      ];
-
-  let pythonPath = null;
-  for (const p of possiblePaths) {
-    if (fs.existsSync(p) || p === "python" || p === "python3") {
-      pythonPath = p;
-      log("info", "Found Python at: " + pythonPath);
-      break;
+// Terminate process with timeout
+function terminateProcess(proc, timeout = 5000) {
+  return new Promise((resolve) => {
+    if (!proc || proc.killed) {
+      resolve();
+      return;
     }
-  }
 
-  if (!pythonPath) {
-    log("error", "Virtual environment not found!");
-    console.error("❌ Virtual environment not found!");
-    console.error("Please create it first:");
-    console.error("  cd backend");
-    console.error("  python -m venv venv");
-    console.error(
-      isWindows ? "  venv\\Scripts\\activate.bat" : "  source venv/bin/activate"
-    );
-    console.error("  pip install -r requirements.txt");
-    console.error("  pip install pyinstaller");
-    process.exit(1);
-  }
+    const timer = setTimeout(() => {
+      try {
+        proc.kill("SIGKILL");
+      } catch (err) {
+        log("warn", `Failed to force kill process: ${err.message}`);
+      }
+      resolve();
+    }, timeout);
 
-  // Check if api.spec exists
-  const specPath = path.join(backendDir, "api.spec");
-  if (!fs.existsSync(specPath)) {
-    log("error", "api.spec not found at: " + specPath);
-    console.error("❌ api.spec not found at:", specPath);
-    process.exit(1);
-  }
+    proc.once("exit", () => {
+      clearTimeout(timer);
+      resolve();
+    });
 
-  log("info", "Building Python backend...");
-  log("info", "Spec file: " + specPath);
-
-  // Run PyInstaller
-  const pyinstaller = spawn(
-    pythonPath,
-    ["-m", "PyInstaller", "api.spec", "--clean", "--noconfirm"],
-    {
-      cwd: backendDir,
-      stdio: "inherit",
-      shell: true, // Important for Windows
+    try {
+      proc.kill("SIGTERM");
+    } catch (err) {
+      log("warn", `Failed to terminate process: ${err.message}`);
+      clearTimeout(timer);
+      resolve();
     }
-  );
-
-  pyinstaller.on("error", (err) => {
-    log("error", "Failed to start PyInstaller", err);
-    console.error("❌ Failed to start PyInstaller:", err);
-    process.exit(1);
   });
+}
 
-  pyinstaller.on("close", (code) => {
-    if (code === 0) {
-      log("info", "Python backend built successfully!");
-      console.log("✅ Python backend built successfully!");
-      const exePath = path.join(
-        backendDir,
-        "dist",
-        isWindows ? "api.exe" : "api"
-      );
-      log("info", "Executable created at: " + exePath);
-      console.log("Executable created at:", exePath);
+// Kill processes on specific ports
+function killProcessOnPort(port) {
+  return new Promise((resolve) => {
+    log("info", `Attempting to kill processes on port ${port}`);
+
+    if (isWindows) {
+      exec(`netstat -ano | findstr :${port}`, (error, stdout) => {
+        if (error || !stdout) {
+          log("debug", `No process found on port ${port}`);
+          resolve();
+          return;
+        }
+
+        const lines = stdout.split("\n");
+        const pids = new Set();
+
+        lines.forEach((line) => {
+          const match = line.match(/\s+(\d+)\s*$/);
+          if (match && match[1] !== "0") {
+            pids.add(match[1]);
+          }
+        });
+
+        if (pids.size === 0) {
+          log("debug", `No valid PIDs found for port ${port}`);
+          resolve();
+          return;
+        }
+
+        log(
+          "info",
+          `Killing processes on port ${port}: ${Array.from(pids).join(", ")}`
+        );
+
+        const killPromises = Array.from(pids).map((pid) => {
+          return new Promise((pidResolve) => {
+            exec(`taskkill /PID ${pid} /T /F`, (killError) => {
+              if (killError) {
+                log(
+                  "warn",
+                  `Failed to kill process ${pid}: ${killError.message}`
+                );
+              } else {
+                log("info", `Successfully killed process tree for PID ${pid}`);
+              }
+              pidResolve();
+            });
+          });
+        });
+
+        Promise.all(killPromises).then(() => {
+          setTimeout(resolve, 2000);
+        });
+      });
     } else {
-      log("error", "PyInstaller failed with code: " + code);
-      console.error("❌ PyInstaller failed with code:", code);
-      process.exit(code);
+      exec(`lsof -ti:${port}`, (error, stdout) => {
+        if (error || !stdout) {
+          log("debug", `No process found on port ${port}`);
+          resolve();
+          return;
+        }
+
+        const pids = stdout
+          .trim()
+          .split("\n")
+          .filter((pid) => pid && pid !== "0");
+
+        if (pids.length === 0) {
+          resolve();
+          return;
+        }
+
+        log("info", `Killing processes on port ${port}: ${pids.join(", ")}`);
+
+        exec(`kill -TERM ${pids.join(" ")}`, (termError) => {
+          if (termError) {
+            log("warn", `SIGTERM failed, trying SIGKILL: ${termError.message}`);
+          }
+
+          setTimeout(() => {
+            exec(`kill -9 ${pids.join(" ")} 2>/dev/null`, (killError) => {
+              if (killError) {
+                log("debug", `SIGKILL completed`);
+              } else {
+                log("info", `Force killed remaining processes on port ${port}`);
+              }
+              setTimeout(resolve, 2000);
+            });
+          }, 3000);
+        });
+      });
     }
+  });
+}
+
+// Enhanced process cleanup
+async function cleanupProcesses() {
+  if (cleanupInProgress) {
+    log("debug", "Cleanup already in progress, skipping");
+    return;
+  }
+
+  cleanupInProgress = true;
+  isShuttingDown = true;
+
+  log("info", "Starting enhanced process cleanup");
+
+  try {
+    const cleanupPromises = [];
+
+    if (backendProcess && !backendProcess.killed) {
+      log("info", "Terminating backend process gracefully");
+      cleanupPromises.push(terminateProcess(backendProcess, 5000));
+    }
+
+    if (frontendProcess && !frontendProcess.killed) {
+      log("info", "Terminating frontend process gracefully");
+      cleanupPromises.push(terminateProcess(frontendProcess, 5000));
+    }
+
+    await Promise.all(cleanupPromises);
+
+    log("info", "Cleaning up processes on ports");
+    await killProcessOnPort(BACKEND_PORT);
+
+    if (trackedProcesses.size > 0) {
+      log("info", `Cleaning up ${trackedProcesses.size} tracked processes`);
+      const trackedCleanup = Array.from(trackedProcesses.entries()).map(
+        ([pid, data]) => {
+          return new Promise((resolve) => {
+            try {
+              if (data.cleanup) {
+                data.cleanup();
+              }
+
+              if (data.process && !data.process.killed) {
+                terminateProcess(data.process, 5000).then(resolve);
+              } else {
+                resolve();
+              }
+            } catch (error) {
+              log(
+                "warn",
+                `Error cleaning up tracked process ${pid}: ${error.message}`
+              );
+              resolve();
+            }
+          });
+        }
+      );
+
+      await Promise.all(trackedCleanup);
+      trackedProcesses.clear();
+    }
+
+    log("info", "Final port cleanup verification");
+    await killProcessOnPort(BACKEND_PORT);
+
+    log("info", "Enhanced process cleanup completed successfully");
+  } catch (error) {
+    log("error", "Error during process cleanup", error);
+  } finally {
+    cleanupInProgress = false;
+  }
+}
+
+function startBackend() {
+  return new Promise((resolve, reject) => {
+    log("info", "Starting backend server");
+
+    if (isDev) {
+      log(
+        "info",
+        "Development mode: start backend manually with 'cd backend && venv\\Scripts\\activate && python api.py'"
+      );
+      resolve();
+      return;
+    }
+
+    const exePath = getResourcePath(path.join("backend", "api.exe"));
+    log("info", `Backend executable path: ${exePath}`);
+
+    if (!fs.existsSync(exePath)) {
+      const error = `Backend executable not found at: ${exePath}`;
+      log("error", error);
+      reject(new Error(error));
+      return;
+    }
+
+    log("info", "Starting backend process");
+
+    backendProcess = spawn(exePath, [], {
+      cwd: path.dirname(exePath),
+      stdio: ["pipe", "pipe", "pipe"],
+      detached: false,
+      windowsHide: true,
+      env: {
+        ...process.env,
+        PORT: BACKEND_PORT.toString(),
+        HOST: "127.0.0.1",
+      },
+    });
+
+    trackedProcesses.set(backendProcess.pid, {
+      process: backendProcess,
+      cleanup: () => {
+        log("info", "Cleaning up backend process");
+      },
+    });
+
+    backendProcess.stdout.on("data", (data) => {
+      log("backend", data.toString().trim());
+    });
+
+    backendProcess.stderr.on("data", (data) => {
+      log("backend-err", data.toString().trim());
+    });
+
+    backendProcess.on("error", (err) => {
+      log("error", "Backend process error", err);
+      trackedProcesses.delete(backendProcess.pid);
+      reject(err);
+    });
+
+    backendProcess.on("exit", (code, signal) => {
+      log(
+        "warn",
+        `Backend process exited with code ${code}, signal: ${signal}`
+      );
+      trackedProcesses.delete(backendProcess.pid);
+    });
+
+    setTimeout(() => {
+      log("info", "Backend startup timeout reached, assuming ready");
+      resolve();
+    }, 5000);
   });
 }
 
@@ -209,12 +467,22 @@ function createWindow() {
 }
 
 // App lifecycle
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   log("info", "Electron app ready");
 
-  // Build backend if needed (typically only in dev or first run)
-  if (isDev) {
-    buildBackend();
+  try {
+    await killProcessOnPort(BACKEND_PORT);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    if (!isDev) {
+      await startBackend();
+    }
+  } catch (error) {
+    log("error", "Application startup failed", error);
+    dialog.showErrorBox(
+      "Startup Failed",
+      `Application failed to start:\n\n${error.message}\n\nPlease check ${logFile} for detailed logs.`
+    );
   }
 
   createWindow();
@@ -226,9 +494,26 @@ app.whenReady().then(() => {
   });
 });
 
-app.on("window-all-closed", () => {
+app.on("window-all-closed", async () => {
+  log("info", "All windows closed, cleaning up");
+  await cleanupProcesses();
   if (process.platform !== "darwin") {
     app.quit();
+  }
+});
+
+app.on("before-quit", async (event) => {
+  if (!isShuttingDown && !cleanupInProgress) {
+    log("info", "Application shutting down");
+    event.preventDefault();
+
+    try {
+      await cleanupProcesses();
+      app.exit(0);
+    } catch (error) {
+      log("error", "Error during shutdown cleanup", error);
+      app.exit(1);
+    }
   }
 });
 
@@ -242,75 +527,26 @@ ipcMain.handle("select-folder", async () => {
   return null;
 });
 
-function startBackend() {
-  return new Promise((resolve, reject) => {
-    log("info", "Starting backend server");
+process.on("SIGINT", async () => {
+  log("info", "Received SIGINT, cleaning up...");
+  await cleanupProcesses();
+  process.exit(0);
+});
 
-    if (isDev) {
-      log("info", "Development mode: assuming backend is running separately");
-      resolve();
-      return;
-    }
+process.on("SIGTERM", async () => {
+  log("info", "Received SIGTERM, cleaning up...");
+  await cleanupProcesses();
+  process.exit(0);
+});
 
-    const exePath = getResourcePath(path.join("backend", "main.exe"));
-    log("info", `Backend executable path: ${exePath}`);
+process.on("uncaughtException", async (error) => {
+  log("error", "Uncaught exception", error);
+  await cleanupProcesses();
+  process.exit(1);
+});
 
-    if (!fs.existsSync(exePath)) {
-      const error = `Backend executable not found at: ${exePath}`;
-      log("error", error);
-      reject(new Error(error));
-      return;
-    }
-
-    log("info", "Starting backend process");
-
-    // Enhanced spawn options for better process management
-    backendProcess = spawn(exePath, [], {
-      cwd: path.dirname(exePath),
-      stdio: ["pipe", "pipe", "pipe"],
-      detached: false, // Keep attached for better cleanup
-      windowsHide: true, // Hide console window on Windows
-      env: {
-        ...process.env,
-        PORT: BACKEND_PORT.toString(),
-        HOST: "127.0.0.1",
-      },
-    });
-
-    // Enhanced process tracking
-    trackedProcesses.set(backendProcess.pid, {
-      process: backendProcess,
-      cleanup: () => {
-        log("info", "Cleaning up backend process");
-      },
-    });
-
-    backendProcess.stdout.on("data", (data) => {
-      log("backend", data.toString().trim());
-    });
-
-    backendProcess.stderr.on("data", (data) => {
-      log("backend-err", data.toString().trim());
-    });
-
-    backendProcess.on("error", (err) => {
-      log("error", "Backend process error", err);
-      trackedProcesses.delete(backendProcess.pid);
-      reject(err);
-    });
-
-    backendProcess.on("exit", (code, signal) => {
-      log(
-        "warn",
-        `Backend process exited with code ${code}, signal: ${signal}`
-      );
-      trackedProcesses.delete(backendProcess.pid);
-    });
-
-    // Improved startup detection
-    setTimeout(() => {
-      log("info", "Backend startup timeout reached, assuming ready");
-      resolve();
-    }, 5000);
-  });
-}
+process.on("unhandledRejection", async (reason, promise) => {
+  log("error", "Unhandled promise rejection", { reason, promise });
+  await cleanupProcesses();
+  process.exit(1);
+});
