@@ -1,7 +1,28 @@
 # python-backend/api.py
+import logging
+import sys
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from src.configs.controller import folder_router
+from src.database.session import engine, Base
+
+
+
+# Configure logging to help with debugging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('fastapi.log')
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+logger.info(f'Creating app.db...')
+Base.metadata.create_all(bind=engine)
+logger.info(f'Created app.db')
 
 app = FastAPI(
     title="Service Manager API",

@@ -1,6 +1,6 @@
 from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-from app.db.session import Base
+from src.database.session import Base
 
 class ConfigurationsFolders(Base):
     __tablename__ = "configurations_folders"

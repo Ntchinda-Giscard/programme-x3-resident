@@ -4,7 +4,7 @@ from ..database.session import get_db
 from ..database.models import ConfigurationsFolders
 
 
-def save_folder_settings(folder_settings: FolderSettings, db: Session = get_db()) -> FolderSettings:
+def save_folder_settings_service(folder_settings: FolderSettings, db: Session = get_db()) -> FolderSettings: # type: ignore
     db.query(ConfigurationsFolders).delete()
     db.commit()
 
@@ -15,7 +15,7 @@ def save_folder_settings(folder_settings: FolderSettings, db: Session = get_db()
 
     db.add(new_config)
     db.commit()
-    db.refresh()
+    db.refresh() # type: ignore
     db.close()
 
-    return FolderSettings(source=new_config.source, destination=new_config.destination)
+    return FolderSettings(source=new_config.source, destination=new_config.destination) # type: ignore
