@@ -1,6 +1,6 @@
 // main.js - Electron Main Process
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
-const { spawn } = require("child_process");
+const { spawn, exec } = require("child_process"); // ADD exec HERE
 const path = require("path");
 const fs = require("fs");
 const isDev = require("electron-is-dev");
@@ -8,6 +8,11 @@ const isWindows = process.platform === "win32";
 const backendDir = path.join(__dirname, "..", "backend"); // Go up one level from electron folder
 
 let mainWindow;
+let backendProcess = null;
+let frontendProcess = null;
+let isShuttingDown = false;
+let cleanupInProgress = false;
+const trackedProcesses = new Map();
 
 const BACKEND_PORT = isDev ? 5000 : 5000;
 
@@ -82,6 +87,13 @@ function startBackend() {
       resolve();
     }, 5000);
   });
+}
+
+function getResourcePath(relativePath) {
+  if (isDev) {
+    return path.join(__dirname, "..", relativePath);
+  }
+  return path.join(process.resourcesPath, relativePath);
 }
 
 // Enhanced logging system
