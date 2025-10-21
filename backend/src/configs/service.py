@@ -15,7 +15,7 @@ def save_folder_settings_service(folder_settings: FolderSettings, db: Session = 
 
     db.add(new_config)
     db.commit()
-    db.refresh() # type: ignore
+    db.refresh(new_config)
     db.close()
 
     return FolderSettings(source=new_config.source, destination=new_config.destination) # type: ignore
