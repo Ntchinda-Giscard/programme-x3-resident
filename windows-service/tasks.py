@@ -1,7 +1,6 @@
 # windows-service/tasks.py
 import logging
 import sys
-from datetime import datetime
 
 # Setup logging
 logging.basicConfig(
