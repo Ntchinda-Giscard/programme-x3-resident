@@ -1,9 +1,10 @@
+from typing import Optional
 from pydantic import BaseModel
 
 
 # --- Response Models (Optional) ---
 class ServiceResponse(BaseModel):
     success: bool
-    message: str | None = None
-    error: str | None = None
-    status: str | None = None
+    message:  Optional[str] = None
+    error: Optional[str] = None
+    status: Optional[bool] = None

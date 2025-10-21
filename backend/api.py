@@ -4,6 +4,7 @@ import sys
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from src.configs.controller import folder_router
+from src.services.controller import service_router
 from src.database.session import engine, Base
 
 
@@ -40,6 +41,7 @@ app.add_middleware(
 )
 
 app.include_router(folder_router)
+app.include_router(service_router)
 
 @app.get("/")
 def read_root():
