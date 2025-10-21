@@ -2,7 +2,7 @@ import logging
 import sys
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from .model import ServiceResponse
+from .model import ServiceResponse, ServiceStatus
 import service_manager
 
 service_router = APIRouter(
@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 async def install_service():
     try:
         result = service_manager.install_service()
+        logger.info(f"Service result: {result}")
         return ServiceResponse( success=True, message="Service installed successfully." )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -37,6 +38,7 @@ async def install_service():
 async def uninstall_service():
     try:
         result = service_manager.uninstall_service()
+        logger.info(f"Service result: {result}")
         return ServiceResponse( success=True, message="Service uninstalled successfully." )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -47,7 +49,7 @@ async def get_status():
     try:
         status = service_manager.get_service_status()
         logger.info(f"Service status: {status}")
-        return ServiceResponse( success=True, message=f"Service status: {status['message']}.", status=status["installed"] )
+        return ServiceResponse( success=True, message=f"Service status retrieved successfully.", status=ServiceStatus( status=status["installed"], installed=status["status"]) )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -56,7 +58,8 @@ async def get_status():
 async def start_service():
     try:
         result = service_manager.start_service()
-        return {"success": True, "message": result}
+        logger.info(f"Service result: {result}")
+        return ServiceResponse( success=True, message="Service started successfully." )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -65,6 +68,6 @@ async def start_service():
 async def stop_service():
     try:
         result = service_manager.stop_service()
-        return {"success": True, "message": result}
+        return ServiceResponse( success=True, message="Service stopped successfully." )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

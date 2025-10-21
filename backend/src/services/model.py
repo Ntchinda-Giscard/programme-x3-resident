@@ -2,9 +2,14 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+class ServiceStatus(BaseModel):
+    status: Optional[bool] = None
+    installed: Optional[str] = None
+    running: Optional[bool] = None
+
 # --- Response Models (Optional) ---
 class ServiceResponse(BaseModel):
     success: bool
     message:  Optional[str] = None
     error: Optional[str] = None
-    status: Optional[bool] = None
+    status: Optional[ServiceStatus] = None

@@ -9,7 +9,7 @@ SERVICE_DESCRIPTION = "Runs scheduled tasks for Your App"
 
 def install_service():
     """Install the Windows service"""
-    service_script = os.path.join(os.path.dirname(__file__), '..', 'windows-service', 'service.py')
+    service_script = os.path.join(os.path.dirname(__file__), 'src', 'windows-service', 'service.py')
     
     cmd = [
         'python',
@@ -32,7 +32,7 @@ def uninstall_service():
     except:
         pass  # Service might not be running
     
-    service_script = os.path.join(os.path.dirname(__file__), '..', 'windows-service', 'service.py')
+    service_script = os.path.join(os.path.dirname(__file__), 'src', 'windows-service', 'service.py')
     
     cmd = ['python', service_script, 'remove']
     result = subprocess.run(cmd, capture_output=True, text=True)
