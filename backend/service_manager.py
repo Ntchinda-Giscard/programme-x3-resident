@@ -35,7 +35,7 @@ def uninstall_service():
     
     service_script = os.path.join(os.path.dirname(__file__), 'src', 'windows-service', 'service.py')
     
-    cmd = ['python', service_script, 'remove']
+    cmd = [sys.executable, service_script, 'remove']
     result = subprocess.run(cmd, capture_output=True, text=True)
     
     if result.returncode == 0:

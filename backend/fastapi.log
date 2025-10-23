@@ -46,3 +46,41 @@
 2025-10-21 23:12:27,013 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
 2025-10-22 06:02:34,022 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
 2025-10-22 06:02:34,079 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-22 13:17:06,347 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-22 13:17:06,452 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-22 13:17:46,529 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-22 13:17:55,132 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-22 13:17:59,767 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-22 13:26:59,474 - ERROR - Error uninstalling service: Uninstallation failed: Traceback (most recent call last):
+  File "C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py", line 2, in <module>
+    import win32serviceutil
+ModuleNotFoundError: No module named 'win32serviceutil'
+ - src.services.controller - uninstall_service - 45 - MainThread
+2025-10-22 14:17:42,074 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-22 14:17:42,118 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-22 14:19:38,432 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-22 14:19:38,463 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-22 14:21:56,140 - INFO - Service result: Service uninstalled successfully - src.services.controller - uninstall_service - 42 - MainThread
+2025-10-22 14:22:05,620 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-22 15:09:22,520 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-22 15:09:22,524 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-22 15:20:31,232 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-22 15:25:00,975 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-22 15:26:18,813 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-22 15:26:41,818 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-22 15:26:50,780 - ERROR - Error starting service: (5, 'OpenSCManager', 'Accès refusé.') - src.services.controller - start_service - 67 - MainThread
+2025-10-22 16:12:41,081 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-22 16:12:47,717 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-22 16:12:54,376 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-22 16:13:03,656 - ERROR - Error starting service: (5, 'OpenSCManager', 'Accès refusé.') - src.services.controller - start_service - 67 - MainThread
+2025-10-22 16:17:56,230 - ERROR - Error starting service: (5, 'OpenSCManager', 'Accès refusé.') - src.services.controller - start_service - 67 - MainThread
+2025-10-22 16:18:11,859 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-22 16:19:09,988 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-22 16:19:17,904 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-22 16:19:29,507 - ERROR - Error starting service: (5, 'OpenSCManager', 'Accès refusé.') - src.services.controller - start_service - 67 - MainThread
+2025-10-22 16:21:41,736 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-22 16:28:33,496 - ERROR - Error starting service: (5, 'OpenSCManager', 'Accès refusé.') - src.services.controller - start_service - 67 - MainThread
+2025-10-22 16:33:12,624 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-22 16:33:26,821 - ERROR - Error starting service: (5, 'OpenSCManager', 'Accès refusé.') - src.services.controller - start_service - 67 - MainThread
+2025-10-22 16:47:21,832 - ERROR - Error starting service: (5, 'OpenSCManager', 'Accès refusé.') - src.services.controller - start_service - 67 - MainThread
+2025-10-22 16:47:56,644 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
