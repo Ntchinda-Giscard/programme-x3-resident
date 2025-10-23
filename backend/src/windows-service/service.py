@@ -1,4 +1,4 @@
-# windows-service/service.py
+# backend/src/windows-service/service.py
 import win32serviceutil
 import win32service
 import win32event

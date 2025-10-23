@@ -84,3 +84,33 @@ ModuleNotFoundError: No module named 'win32serviceutil'
 2025-10-22 16:33:26,821 - ERROR - Error starting service: (5, 'OpenSCManager', 'Accès refusé.') - src.services.controller - start_service - 67 - MainThread
 2025-10-22 16:47:21,832 - ERROR - Error starting service: (5, 'OpenSCManager', 'Accès refusé.') - src.services.controller - start_service - 67 - MainThread
 2025-10-22 16:47:56,644 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-22 16:48:02,182 - ERROR - Error starting service: (5, 'OpenSCManager', 'Accès refusé.') - src.services.controller - start_service - 67 - MainThread
+2025-10-23 11:55:33,180 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-23 11:55:33,285 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-23 11:57:46,081 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-23 12:40:33,229 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-23 12:40:42,786 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 31 - MainThread
+2025-10-23 13:40:38,395 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-23 13:42:21,409 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-23 13:43:39,015 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-23 13:44:15,206 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-23 13:44:58,491 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-23 13:45:21,340 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-23 13:50:18,550 - INFO - Service status: {'installed': False, 'status': 'not_installed'} - src.services.controller - get_status - 53 - MainThread
+2025-10-23 13:56:57,598 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-23 13:56:57,605 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-23 13:58:39,698 - INFO - Service result: Service installed successfully and set to auto-start with Windows - src.services.controller - install_service - 32 - MainThread
+2025-10-23 13:58:47,178 - ERROR - Error starting service: Failed to start service: Service is not installed. Please install it first. - src.services.controller - start_service - 68 - MainThread
+2025-10-23 13:58:59,618 - INFO - Service result: Service installed successfully and set to auto-start with Windows - src.services.controller - install_service - 32 - MainThread
+2025-10-23 14:00:41,284 - ERROR - Error starting service: Failed to start service: Service is not installed. Please install it first. - src.services.controller - start_service - 68 - MainThread
+2025-10-23 14:01:37,518 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-23 14:01:37,524 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-23 14:02:35,871 - INFO - Service result: Service installed successfully and set to auto-start with Windows - src.services.controller - install_service - 32 - MainThread
+2025-10-23 14:02:54,605 - INFO - Service result: Service installed successfully and set to auto-start with Windows - src.services.controller - install_service - 32 - MainThread
+2025-10-23 14:07:32,447 - ERROR - Error starting service: Failed to start service: Service is not installed. Please install it first. - src.services.controller - start_service - 68 - MainThread
+2025-10-23 14:46:03,221 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-23 14:46:03,226 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-23 14:46:27,796 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-23 14:46:27,801 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-23 14:51:13,182 - INFO - Service result: Service installed successfully and set to auto-start with Windows - src.services.controller - install_service - 32 - MainThread
+2025-10-23 14:52:13,860 - ERROR - Error starting service: Failed to start service: (1053, 'StartService', 'Le service n’a pas répondu assez vite à la demande de lancement ou de contrôle.') - src.services.controller - start_service - 68 - MainThread
