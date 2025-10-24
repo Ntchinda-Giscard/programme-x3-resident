@@ -114,3 +114,34 @@ ModuleNotFoundError: No module named 'win32serviceutil'
 2025-10-23 14:46:27,801 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
 2025-10-23 14:51:13,182 - INFO - Service result: Service installed successfully and set to auto-start with Windows - src.services.controller - install_service - 32 - MainThread
 2025-10-23 14:52:13,860 - ERROR - Error starting service: Failed to start service: (1053, 'StartService', 'Le service n’a pas répondu assez vite à la demande de lancement ou de contrôle.') - src.services.controller - start_service - 68 - MainThread
+2025-10-23 17:56:53,849 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-23 17:56:53,854 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-23 18:06:20,899 - INFO - Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} - src.services.controller - get_status - 54 - MainThread
+2025-10-23 18:06:36,613 - INFO - Backend directory: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend - service_manager - get_service_script_path - 64 - MainThread
+2025-10-23 18:06:36,614 - INFO - Service script path: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - get_service_script_path - 65 - MainThread
+2025-10-23 18:06:36,615 - INFO - Service script exists: True - service_manager - get_service_script_path - 66 - MainThread
+2025-10-23 18:06:36,615 - INFO - Using Python: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\.venv\Scripts\python.exe - service_manager - install_service - 87 - MainThread
+2025-10-23 18:06:36,696 - ERROR - Error installing service: (5, 'NetUserAdd', 'Accès refusé.') - src.services.controller - install_service - 35 - MainThread
+2025-10-23 18:07:08,335 - INFO - Backend directory: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend - service_manager - get_service_script_path - 64 - MainThread
+2025-10-23 18:07:08,336 - INFO - Service script path: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - get_service_script_path - 65 - MainThread
+2025-10-23 18:07:08,338 - INFO - Service script exists: True - service_manager - get_service_script_path - 66 - MainThread
+2025-10-23 18:07:08,340 - INFO - Using Python: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\.venv\Scripts\python.exe - service_manager - install_service - 87 - MainThread
+2025-10-23 18:07:08,344 - ERROR - Error installing service: (5, 'NetUserAdd', 'Accès refusé.') - src.services.controller - install_service - 35 - MainThread
+2025-10-24 10:14:22,227 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-24 10:14:22,303 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-24 10:17:36,687 - INFO - Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} - src.services.controller - get_status - 54 - MainThread
+2025-10-24 10:19:42,272 - ERROR - Error stopping service: Failed to stop service: Service is not installed - src.services.controller - stop_service - 78 - MainThread
+2025-10-24 10:19:48,669 - INFO - Backend directory: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend - service_manager - get_service_script_path - 64 - MainThread
+2025-10-24 10:19:48,669 - INFO - Service script path: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - get_service_script_path - 65 - MainThread
+2025-10-24 10:19:48,674 - INFO - Service script exists: True - service_manager - get_service_script_path - 66 - MainThread
+2025-10-24 10:19:48,675 - INFO - Using Python: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\.venv\Scripts\python.exe - service_manager - install_service - 87 - MainThread
+2025-10-24 10:19:48,678 - INFO - Running command: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\.venv\Scripts\python.exe C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py --username .\DIGITAL MARKET --password 1478500 --startup=auto install - service_manager - install_service - 99 - MainThread
+2025-10-24 10:19:48,688 - INFO - Working directory: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service - service_manager - install_service - 100 - MainThread
+2025-10-24 10:19:49,803 - INFO - Return code: 0 - service_manager - install_service - 109 - MainThread
+2025-10-24 10:19:49,803 - INFO - STDOUT: Installing service WAZAPOS
+Error installing service: Accès refusé. (5)
+ - service_manager - install_service - 110 - MainThread
+2025-10-24 10:19:49,804 - INFO - STDERR:  - service_manager - install_service - 111 - MainThread
+2025-10-24 10:19:49,804 - INFO - Service result: Service installed successfully and set to auto-start with Windows - src.services.controller - install_service - 32 - MainThread
+2025-10-24 10:20:36,087 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-24 10:20:36,092 - INFO - Created app.db - __main__ - <module> - 26 - MainThread

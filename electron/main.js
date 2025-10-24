@@ -16,6 +16,45 @@ const trackedProcesses = new Map();
 
 const BACKEND_PORT = isDev ? 5000 : 5000;
 
+// Check if running as administrator (Windows)
+function isRunningAsAdmin() {
+  if (process.platform !== "win32") return true;
+
+  try {
+    const { execSync } = require("child_process");
+    execSync("net session", { stdio: "ignore" });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Request admin privileges if not already admin
+function requestAdminPrivileges() {
+  if (process.platform !== "win32") return;
+
+  if (!isRunningAsAdmin()) {
+    console.log("Not running as admin, requesting elevation...");
+
+    dialog.showMessageBoxSync({
+      type: "warning",
+      title: "Administrator Rights Required",
+      message:
+        "WAZAPOS requires administrator privileges to manage Windows services.",
+      buttons: ["OK"],
+    });
+
+    // Relaunch with admin rights
+    const options = {
+      args: process.argv.slice(1),
+      execPath: process.execPath,
+    };
+
+    app.relaunch({ args: options.args, execPath: options.execPath });
+    app.exit(0);
+  }
+}
+
 function startBackend() {
   return new Promise((resolve, reject) => {
     log("info", "Starting backend server");

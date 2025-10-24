@@ -9,7 +9,7 @@ import time
 from scheduler import TaskScheduler
 
 class YourAppService(win32serviceutil.ServiceFramework):
-    _svc_name_ = "YourAppService"
+    _svc_name_ = "WAZAPOS"
     _svc_display_name_ = "Your App Background Service"
     _svc_description_ = "Runs scheduled tasks for Your App"
 

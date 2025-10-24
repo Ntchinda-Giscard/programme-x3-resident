@@ -1,18 +1,57 @@
 # backend/service_manager.py
+import logging
 import subprocess
 import win32serviceutil
 import win32service
 import pywintypes
+import win32net
+import win32netcon
 import os
 import sys
 
 
-SERVICE_USER = "WazaPOSUser"
-SERVICE_PASSWORD = "StrongPassword123!"  # You can generate or encrypt this if needed
+SERVICE_USER = "DIGITAL MARKET"
+SERVICE_PASSWORD = "1478500"  # You can generate or encrypt this if needed
 
 SERVICE_NAME = "WAZAPOS"
 SERVICE_DISPLAY_NAME = "WAZAPOS App Background Service"
 SERVICE_DESCRIPTION = "Runs scheduled tasks for WAZAPOS App"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('fastapi.log')
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+def create_service_user_if_needed(username, password):
+    """Create a local Windows user if it doesn't exist."""
+    try:
+        win32net.NetUserGetInfo(None, username, 1) # type: ignore
+        logger.info(f"User {username} already exists.")
+        return
+    except pywintypes.error as e:
+        if e.winerror != 2221:  # 2221 = user does not exist
+            raise
+
+    print(f"Creating user {username}...")
+    user_info = {
+        "name": username,
+        "password": password,
+        "priv": win32netcon.USER_PRIV_USER,
+        "home_dir": None,
+        "comment": "Service account for Python app",
+        "flags": win32netcon.UF_SCRIPT | win32netcon.UF_DONT_EXPIRE_PASSWD,
+    }
+
+    win32net.NetUserAdd(None, 1, user_info) # type: ignore
+    subprocess.run(["net", "localgroup", "Administrators", username, "/add"], shell=True)
+    logger.info(f" User {username} created and added to Administrators group.")
+
 
 def get_service_script_path():
     """Get the absolute path to the service script"""
@@ -22,9 +61,9 @@ def get_service_script_path():
     # Build path to service.py
     service_script = os.path.join(backend_dir, 'src', 'windows-service', 'service.py')
     
-    print(f"Backend directory: {backend_dir}")
-    print(f"Service script path: {service_script}")
-    print(f"Service script exists: {os.path.exists(service_script)}")
+    logger.info(f"Backend directory: {backend_dir}")
+    logger.info(f"Service script path: {service_script}")
+    logger.info(f"Service script exists: {os.path.exists(service_script)}")
     
     if not os.path.exists(service_script):
         raise FileNotFoundError(f"Service script not found at: {service_script}")
@@ -45,17 +84,20 @@ def install_service():
     
     # Use the current Python interpreter
     python_exe = sys.executable
-    print(f"Using Python: {python_exe}")
+    logger.info(f"Using Python: {python_exe}")
+    # create_service_user_if_needed(SERVICE_USER, SERVICE_PASSWORD)
     
     cmd = [
         python_exe,
         service_script,
+        '--username', f'.\\{SERVICE_USER}',
+        '--password', SERVICE_PASSWORD,
         '--startup=auto',
         'install'
     ]
     
-    print(f"Running command: {' '.join(cmd)}")
-    print(f"Working directory: {os.path.dirname(service_script)}")
+    logger.info(f"Running command: {' '.join(cmd)}")
+    logger.info(f"Working directory: {os.path.dirname(service_script)}")
     
     result = subprocess.run(
         cmd,
@@ -64,9 +106,9 @@ def install_service():
         cwd=os.path.dirname(service_script)
     )
     
-    print(f"Return code: {result.returncode}")
-    print(f"STDOUT: {result.stdout}")
-    print(f"STDERR: {result.stderr}")
+    logger.info(f"Return code: {result.returncode}")
+    logger.info(f"STDOUT: {result.stdout}")
+    logger.info(f"STDERR: {result.stderr}")
     
     if result.returncode == 0:
         return "Service installed successfully and set to auto-start with Windows"
@@ -79,17 +121,17 @@ def uninstall_service():
         # Stop service first if running
         status = get_service_status()
         if status['installed'] and status['status'] == 'running':
-            print("Stopping service before uninstall...")
+            logger.info("Stopping service before uninstall...")
             stop_service()
     except Exception as e:
-        print(f"Warning: Could not stop service: {e}")
+        logger.info(f"Warning: Could not stop service: {e}")
     
     try:
         service_script = get_service_script_path()
         
         cmd = [sys.executable, service_script, 'remove']
         
-        print(f"Running uninstall command: {' '.join(cmd)}")
+        logger.info(f"Running uninstall command: {' '.join(cmd)}")
         
         result = subprocess.run(
             cmd,
@@ -98,9 +140,9 @@ def uninstall_service():
             cwd=os.path.dirname(service_script)
         )
         
-        print(f"Return code: {result.returncode}")
-        print(f"STDOUT: {result.stdout}")
-        print(f"STDERR: {result.stderr}")
+        logger.info(f"Return code: {result.returncode}")
+        logger.info(f"STDOUT: {result.stdout}")
+        logger.info(f"STDERR: {result.stderr}")
         
         if result.returncode == 0:
             return "Service uninstalled successfully"
@@ -123,7 +165,7 @@ def start_service():
         if status['status'] == 'start_pending':
             return "Service is already starting"
         
-        print(f"Starting service: {SERVICE_NAME}")
+        logger.info(f"Starting service: {SERVICE_NAME}")
         win32serviceutil.StartService(SERVICE_NAME)
         
         # Wait a bit and verify it started
@@ -160,7 +202,7 @@ def stop_service():
         if status['status'] == 'stop_pending':
             return "Service is already stopping"
         
-        print(f"Stopping service: {SERVICE_NAME}")
+        logger.info(f"Stopping service: {SERVICE_NAME}")
         win32serviceutil.StopService(SERVICE_NAME)
         
         # Wait a bit and verify it stopped
