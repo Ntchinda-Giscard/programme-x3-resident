@@ -449,6 +449,15 @@ app.whenReady().then(async () => {
   if (!isDev) {
     requestAdminPrivileges();
   }
+  // Show admin status
+  const adminStatus = isRunningAsAdmin()
+    ? "✓ Running as Administrator"
+    : "✗ NOT running as Administrator";
+  log("info", adminStatus);
+
+  if (!isRunningAsAdmin() && !isDev) {
+    log("warn", "⚠️  Service management will fail without admin rights!");
+  }
   log("info", "Electron app ready");
 
   try {
