@@ -65,7 +65,7 @@ function startBackend() {
       return;
     }
 
-    const exePath = getResourcePath(path.join("backend", "main.exe"));
+    const exePath = getResourcePath(path.join("backend", "api.exe"));
     log("info", `Backend executable path: ${exePath}`);
 
     if (!fs.existsSync(exePath)) {
@@ -360,79 +360,6 @@ async function cleanupProcesses() {
   }
 }
 
-function startBackend() {
-  return new Promise((resolve, reject) => {
-    log("info", "Starting backend server");
-
-    if (isDev) {
-      log(
-        "info",
-        "Development mode: start backend manually with 'cd backend && venv\\Scripts\\activate && python api.py'"
-      );
-      resolve();
-      return;
-    }
-
-    const exePath = getResourcePath(path.join("backend", "api.exe"));
-    log("info", `Backend executable path: ${exePath}`);
-
-    if (!fs.existsSync(exePath)) {
-      const error = `Backend executable not found at: ${exePath}`;
-      log("error", error);
-      reject(new Error(error));
-      return;
-    }
-
-    log("info", "Starting backend process");
-
-    backendProcess = spawn(exePath, [], {
-      cwd: path.dirname(exePath),
-      stdio: ["pipe", "pipe", "pipe"],
-      detached: false,
-      windowsHide: true,
-      env: {
-        ...process.env,
-        PORT: BACKEND_PORT.toString(),
-        HOST: "127.0.0.1",
-      },
-    });
-
-    trackedProcesses.set(backendProcess.pid, {
-      process: backendProcess,
-      cleanup: () => {
-        log("info", "Cleaning up backend process");
-      },
-    });
-
-    backendProcess.stdout.on("data", (data) => {
-      log("backend", data.toString().trim());
-    });
-
-    backendProcess.stderr.on("data", (data) => {
-      log("backend-err", data.toString().trim());
-    });
-
-    backendProcess.on("error", (err) => {
-      log("error", "Backend process error", err);
-      trackedProcesses.delete(backendProcess.pid);
-      reject(err);
-    });
-
-    backendProcess.on("exit", (code, signal) => {
-      log(
-        "warn",
-        `Backend process exited with code ${code}, signal: ${signal}`
-      );
-      trackedProcesses.delete(backendProcess.pid);
-    });
-
-    setTimeout(() => {
-      log("info", "Backend startup timeout reached, assuming ready");
-      resolve();
-    }, 5000);
-  });
-}
-
 // Create main window
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -519,6 +446,9 @@ function createWindow() {
 
 // App lifecycle
 app.whenReady().then(async () => {
+  if (!isDev) {
+    requestAdminPrivileges();
+  }
   log("info", "Electron app ready");
 
   try {
