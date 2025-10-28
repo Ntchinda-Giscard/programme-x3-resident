@@ -154,7 +154,6 @@ def get_python_executable():
     else:
         # Development mode - use current interpreter
         return sys.executable
-
 def install_service():
     """Install the Windows service"""
     try:
@@ -167,7 +166,7 @@ def install_service():
         raise e
     
     service_script = get_service_script_path()
-    python_exe = get_python_executable()  # Use this instead of sys.executable
+    python_exe = get_python_executable()
     
     logger.info(f"Using Python: {python_exe}")
     
@@ -179,6 +178,25 @@ def install_service():
         '--startup=auto',
         'install'
     ]
+    
+    logger.info(f"Running install command: {' '.join(cmd)}")
+    
+    # Actually run the command!
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        cwd=os.path.dirname(service_script)
+    )
+    
+    logger.info(f"Return code: {result.returncode}")
+    logger.info(f"STDOUT: {result.stdout}")
+    logger.info(f"STDERR: {result.stderr}")
+    
+    if result.returncode == 0:
+        return "Service installed successfully"
+    else:
+        raise Exception(f"Installation failed: {result.stderr or result.stdout}")
 
 def uninstall_service():
     """Uninstall the Windows service"""
