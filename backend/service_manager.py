@@ -1,4 +1,4 @@
-# backend/service_manager.py
+
 import logging
 import subprocess
 import win32serviceutil
@@ -8,10 +8,10 @@ import win32net
 import win32netcon
 import os
 import sys
-
+import shutil
 
 SERVICE_USER = "DIGITAL MARKET"
-SERVICE_PASSWORD = "1478500"  # You can generate or encrypt this if needed
+SERVICE_PASSWORD = "1478500"
 
 SERVICE_NAME = "WAZAPOS"
 SERVICE_DISPLAY_NAME = "WAZAPOS App Background Service"
@@ -28,6 +28,79 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+def get_permanent_service_dir():
+    """Get or create a permanent directory for service files"""
+    app_data = os.getenv('LOCALAPPDATA')
+    
+    # Handle case where LOCALAPPDATA is not set
+    if not app_data:
+        # Fallback to APPDATA or a default location
+        app_data = os.getenv('APPDATA')
+        if not app_data:
+            # Last resort: use user's home directory
+            app_data = os.path.expanduser('~')
+    
+    service_dir = os.path.join(app_data, 'WAZAPOS', 'service')
+    os.makedirs(service_dir, exist_ok=True)
+    return service_dir
+
+def get_service_script_path():
+    """Get the absolute path to the service script"""
+    
+    # Check if running as PyInstaller bundle
+    if getattr(sys, 'frozen', False):
+        logger.info("Running as compiled executable")
+        
+        # Use permanent location for service files
+        permanent_dir = get_permanent_service_dir()
+        service_script = os.path.join(permanent_dir, 'service.py')
+        
+        logger.info(f"Permanent service directory: {permanent_dir}")
+        
+        # If service script doesn't exist in permanent location, copy it from bundle
+        if not os.path.exists(service_script):
+            logger.info("Service script not found in permanent location, attempting to copy from bundle")
+            
+            # Get _MEIPASS directory safely
+            meipass = getattr(sys, '_MEIPASS', None)
+            if meipass:
+                possible_sources = [
+                    os.path.join(meipass, 'src', 'windows-service', 'service.py'),
+                    os.path.join(meipass, 'windows-service', 'service.py'),
+                    os.path.join(meipass, 'service.py'),
+                ]
+                
+                for source in possible_sources:
+                    logger.info(f"Checking for service script at: {source}")
+                    if os.path.exists(source):
+                        logger.info(f"Found service script at: {source}")
+                        shutil.copy2(source, service_script)
+                        
+                        # Also copy scheduler.py if it exists
+                        scheduler_source = os.path.join(os.path.dirname(source), 'scheduler.py')
+                        if os.path.exists(scheduler_source):
+                            shutil.copy2(scheduler_source, os.path.join(permanent_dir, 'scheduler.py'))
+                            logger.info("Copied scheduler.py as well")
+                        
+                        break
+                else:
+                    # List what's actually in _MEIPASS for debugging
+                    logger.info(f"Contents of _MEIPASS: {os.listdir(meipass)}")
+                    raise FileNotFoundError(f"Service script not found in bundle. Checked: {possible_sources}")
+    else:
+        # Running in development mode
+        logger.info("Running in development mode")
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        service_script = os.path.join(backend_dir, 'src', 'windows-service', 'service.py')
+    
+    logger.info(f"Final service script path: {service_script}")
+    logger.info(f"Service script exists: {os.path.exists(service_script)}")
+    
+    if not os.path.exists(service_script):
+        raise FileNotFoundError(f"Service script not found at: {service_script}")
+    
+    return service_script
+
 def create_service_user_if_needed(username, password):
     """Create a local Windows user if it doesn't exist."""
     try:
@@ -35,7 +108,7 @@ def create_service_user_if_needed(username, password):
         logger.info(f"User {username} already exists.")
         return
     except pywintypes.error as e:
-        if e.winerror != 2221:  # 2221 = user does not exist
+        if e.winerror != 2221:
             raise
 
     print(f"Creating user {username}...")
@@ -50,70 +123,62 @@ def create_service_user_if_needed(username, password):
 
     win32net.NetUserAdd(None, 1, user_info) # type: ignore
     subprocess.run(["net", "localgroup", "Administrators", username, "/add"], shell=True)
-    logger.info(f" User {username} created and added to Administrators group.")
+    logger.info(f"User {username} created and added to Administrators group.")
 
-
-def get_service_script_path():
-    """Get the absolute path to the service script"""
-    # Get the backend directory (where this file is located)
-    backend_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # Build path to service.py
-    service_script = os.path.join(backend_dir, 'src', 'windows-service', 'service.py')
-    
-    logger.info(f"Backend directory: {backend_dir}")
-    logger.info(f"Service script path: {service_script}")
-    logger.info(f"Service script exists: {os.path.exists(service_script)}")
-    
-    if not os.path.exists(service_script):
-        raise FileNotFoundError(f"Service script not found at: {service_script}")
-    
-    return service_script
+def get_python_executable():
+    """Get Python executable path"""
+    if getattr(sys, 'frozen', False):
+        # When frozen, look for bundled Python
+        exe_dir = os.path.dirname(sys.executable)
+        
+        # Check for bundled Python in several locations
+        possible_paths = [
+            os.path.join(exe_dir, 'python', 'python.exe'),
+            os.path.join(exe_dir, 'resources', 'python', 'python.exe'),
+            os.path.join(os.path.dirname(exe_dir), 'python', 'python.exe'),
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                logger.info(f"Found bundled Python at: {path}")
+                return path
+        
+        # Fallback: try to find system Python
+        import shutil
+        system_python = shutil.which('python') or shutil.which('python3')
+        if system_python:
+            logger.info(f"Using system Python at: {system_python}")
+            return system_python
+        
+        raise FileNotFoundError("No Python interpreter found. Please ensure Python is installed or bundle it with your app.")
+    else:
+        # Development mode - use current interpreter
+        return sys.executable
 
 def install_service():
     """Install the Windows service"""
     try:
-        # Check if already installed
         status = get_service_status()
+        logger.info(f'Current service status: {status}')
         if status['installed']:
             return "Service is already installed"
-    except:
-        pass
+    except Exception as e:
+        logger.error(f'Error checking service status: {e}')
+        raise e
     
     service_script = get_service_script_path()
+    python_exe = get_python_executable()  # Use this instead of sys.executable
     
-    # Use the current Python interpreter
-    python_exe = sys.executable
     logger.info(f"Using Python: {python_exe}")
-    # create_service_user_if_needed(SERVICE_USER, SERVICE_PASSWORD)
     
     cmd = [
         python_exe,
         service_script,
-        '--username', f'.\\{SERVICE_USER}',
-        '--password', SERVICE_PASSWORD,
+        # '--username', f'.\\{SERVICE_USER}',
+        # '--password', SERVICE_PASSWORD,
         '--startup=auto',
         'install'
     ]
-    
-    logger.info(f"Running command: {' '.join(cmd)}")
-    logger.info(f"Working directory: {os.path.dirname(service_script)}")
-    
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        cwd=os.path.dirname(service_script)
-    )
-    
-    logger.info(f"Return code: {result.returncode}")
-    logger.info(f"STDOUT: {result.stdout}")
-    logger.info(f"STDERR: {result.stderr}")
-    
-    if result.returncode == 0:
-        return "Service installed successfully and set to auto-start with Windows"
-    else:
-        raise Exception(f"Installation failed: {result.stderr or result.stdout}")
 
 def uninstall_service():
     """Uninstall the Windows service"""
