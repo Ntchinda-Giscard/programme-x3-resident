@@ -154,12 +154,15 @@ def get_python_executable():
     else:
         # Development mode - use current interpreter
         return sys.executable
+
+
 def install_service():
     """Install the Windows service"""
     try:
         status = get_service_status()
         logger.info(f'Current service status: {status}')
         if status['installed']:
+            logger.info("Service already installed, returning early")
             return "Service is already installed"
     except Exception as e:
         logger.error(f'Error checking service status: {e}')
@@ -169,6 +172,7 @@ def install_service():
     python_exe = get_python_executable()
     
     logger.info(f"Using Python: {python_exe}")
+    logger.info(f"Service script: {service_script}")
     
     cmd = [
         python_exe,
@@ -180,24 +184,47 @@ def install_service():
     ]
     
     logger.info(f"Running install command: {' '.join(cmd)}")
+    logger.info(f"Working directory: {os.path.dirname(service_script)}")
     
-    # Actually run the command!
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        cwd=os.path.dirname(service_script)
-    )
+    try:
+        # Execute the installation command with timeout
+        logger.info("About to execute subprocess.run...")
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(service_script),
+            timeout=30  # Add 30 second timeout
+        )
+        
+        logger.info(f"Subprocess completed")
+        logger.info(f"Return code: {result.returncode}")
+        logger.info(f"STDOUT: {result.stdout}")
+        logger.info(f"STDERR: {result.stderr}")
+        
+        if result.returncode == 0:
+            success_msg = "Service installed successfully"
+            logger.info(f"Returning success: {success_msg}")
+            return success_msg
+        else:
+            error_msg = result.stderr or result.stdout or "Unknown error"
+            logger.error(f"Installation failed with error: {error_msg}")
+            raise Exception(f"Installation failed: {error_msg}")
     
-    logger.info(f"Return code: {result.returncode}")
-    logger.info(f"STDOUT: {result.stdout}")
-    logger.info(f"STDERR: {result.stderr}")
+    except subprocess.TimeoutExpired as e:
+        logger.error(f"Installation command timed out after 30 seconds")
+        raise Exception(f"Installation timed out: {str(e)}")
+    except subprocess.SubprocessError as e:
+        logger.error(f"Subprocess error: {e}")
+        raise Exception(f"Failed to execute install command: {str(e)}")
+    except Exception as e:
+        logger.error(f"Unexpected error during installation: {e}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise Exception(f"Failed to install service: {str(e)}")
     
-    if result.returncode == 0:
-        return "Service installed successfully"
-    else:
-        raise Exception(f"Installation failed: {result.stderr or result.stdout}")
-
+    
 def uninstall_service():
     """Uninstall the Windows service"""
     try:
