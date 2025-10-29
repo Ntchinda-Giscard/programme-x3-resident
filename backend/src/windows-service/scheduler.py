@@ -2,7 +2,7 @@
 import schedule
 import time
 import threading
-from tasks import your_task_function
+from .tasks import your_task_function
 
 class TaskScheduler:
     def __init__(self):
