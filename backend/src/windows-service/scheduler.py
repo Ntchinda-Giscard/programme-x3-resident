@@ -2,7 +2,6 @@
 import schedule
 import time
 import threading
-from tasks import your_task_function
 # windows-service/tasks.py
 import logging
 import sys
