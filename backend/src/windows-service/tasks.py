@@ -14,14 +14,9 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+# backend/src/windows-service/tasks.py
 def your_task_function():
-    """Your scheduled task logic here"""
-    try:
-        logger.info("Task started")
-        
-        # Your task logic here
-        # Example: Process data, send notifications, etc.
-        
-        logger.info("Task completed successfully")
-    except Exception as e:
-        logger.error(f"Task failed: {str(e)}")
+    """Example task function"""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("Task executed")

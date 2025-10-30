@@ -2,7 +2,29 @@
 import schedule
 import time
 import threading
-from .tasks import your_task_function
+from tasks import your_task_function
+# windows-service/tasks.py
+import logging
+import sys
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('fastapi.log')
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+# backend/src/windows-service/tasks.py
+def your_task_function():
+    """Example task function"""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("Task executed")
 
 class TaskScheduler:
     def __init__(self):

@@ -1,5 +1,4 @@
 # backend/src/windows-service/service.py
-from scheduler import TaskScheduler
 import win32serviceutil
 import win32service
 import win32event
@@ -9,6 +8,7 @@ import sys
 import time
 import os
 import traceback
+from scheduler import TaskScheduler
 
 # Set up file logging BEFORE anything else
 def setup_logging():
@@ -38,7 +38,7 @@ logger.info("=" * 80)
 logger.info("SERVICE STARTING - Log initialized")
 logger.info("=" * 80)
 
-# Try to import scheduler, with detailed error logging
+# Try to import scheduler with detailed error logging
 SCHEDULER_AVAILABLE = False
 SCHEDULER_ERROR = None
 
@@ -47,19 +47,36 @@ try:
     logger.info(f"Python executable: {sys.executable}")
     logger.info(f"Python version: {sys.version}")
     logger.info(f"Current working directory: {os.getcwd()}")
+    logger.info(f"Script directory: {os.path.dirname(__file__)}")
     logger.info(f"sys.path: {sys.path}")
     
+    # Import the TaskScheduler class from scheduler module
     from scheduler import TaskScheduler
+    
     SCHEDULER_AVAILABLE = True
     logger.info("✓ Successfully imported TaskScheduler")
+    logger.info(f"TaskScheduler type: {type(TaskScheduler)}")
     
-except Exception as e:
-    SCHEDULER_ERROR = str(e)
-    logger.error(f"✗ Failed to import scheduler: {e}")
+except ImportError as e:
+    SCHEDULER_ERROR = f"Import error: {str(e)}"
+    logger.error(f"✗ Failed to import scheduler (ImportError): {e}")
     logger.error(f"Traceback: {traceback.format_exc()}")
     
-    # Also log to Windows Event Log
-    servicemanager.LogErrorMsg(f"Failed to import scheduler: {e}")
+    # Also log to Windows Event Log (if available)
+    try:
+        servicemanager.LogErrorMsg(f"Failed to import scheduler: {e}")
+    except:
+        pass
+        
+except Exception as e:
+    SCHEDULER_ERROR = f"Unexpected error: {str(e)}"
+    logger.error(f"✗ Failed to import scheduler (Exception): {e}")
+    logger.error(f"Traceback: {traceback.format_exc()}")
+    
+    try:
+        servicemanager.LogErrorMsg(f"Failed to import scheduler: {e}")
+    except:
+        pass
 
 
 class YourAppService(win32serviceutil.ServiceFramework):
@@ -90,8 +107,11 @@ class YourAppService(win32serviceutil.ServiceFramework):
             
             if self.scheduler:
                 logger.info("Stopping scheduler...")
-                self.scheduler.stop()
-                logger.info("✓ Scheduler stopped")
+                try:
+                    self.scheduler.stop()
+                    logger.info("✓ Scheduler stopped")
+                except Exception as e:
+                    logger.error(f"Error stopping scheduler: {e}")
             
             logger.info("✓ Service stop completed")
         except Exception as e:
@@ -114,7 +134,8 @@ class YourAppService(win32serviceutil.ServiceFramework):
             
             logger.info("Calling main()...")
             
-            # Report that we've started successfully
+            # Report that we've started successfully BEFORE running main
+            # This prevents the 1053 timeout error
             self.ReportServiceStatus(win32service.SERVICE_RUNNING)
             
             # Now run the main loop
@@ -126,7 +147,10 @@ class YourAppService(win32serviceutil.ServiceFramework):
             logger.error(f"✗ FATAL ERROR in SvcDoRun: {e}")
             logger.error(traceback.format_exc())
             
-            servicemanager.LogErrorMsg(f"Service failed: {e}")
+            try:
+                servicemanager.LogErrorMsg(f"Service failed: {e}")
+            except:
+                pass
             
             # Report service stopped due to error
             self.ReportServiceStatus(win32service.SERVICE_STOPPED)
@@ -139,10 +163,13 @@ class YourAppService(win32serviceutil.ServiceFramework):
                 logger.warning("Scheduler not available - running in limited mode")
                 logger.warning(f"Scheduler error was: {SCHEDULER_ERROR}")
                 
-                servicemanager.LogWarningMsg(
-                    f"TaskScheduler not available: {SCHEDULER_ERROR}. "
-                    "Service running in limited mode."
-                )
+                try:
+                    servicemanager.LogWarningMsg(
+                        f"TaskScheduler not available: {SCHEDULER_ERROR}. "
+                        "Service running in limited mode."
+                    )
+                except:
+                    pass
                 
                 # Keep service alive but don't do anything
                 logger.info("Entering wait loop (limited mode)...")
@@ -156,19 +183,28 @@ class YourAppService(win32serviceutil.ServiceFramework):
             # Initialize and start the scheduler
             logger.info("Initializing TaskScheduler...")
             try:
-                self.scheduler = TaskScheduler()
-                logger.info("✓ TaskScheduler created")
+                if SCHEDULER_AVAILABLE and 'TaskScheduler' in globals():
+                    self.scheduler = TaskScheduler()
+                    logger.info("✓ TaskScheduler instance created")
+                else:
+                    raise ImportError("TaskScheduler is not available")
                 
                 logger.info("Starting scheduler...")
                 self.scheduler.start()
                 logger.info("✓ TaskScheduler started successfully")
                 
-                servicemanager.LogInfoMsg("TaskScheduler started successfully")
+                try:
+                    servicemanager.LogInfoMsg("TaskScheduler started successfully")
+                except:
+                    pass
                 
             except Exception as e:
                 logger.error(f"✗ Failed to start scheduler: {e}")
                 logger.error(traceback.format_exc())
-                servicemanager.LogErrorMsg(f"Failed to start scheduler: {e}")
+                try:
+                    servicemanager.LogErrorMsg(f"Failed to start scheduler: {e}")
+                except:
+                    pass
                 # Continue anyway, just without scheduler
             
             # Keep the service running
@@ -185,7 +221,10 @@ class YourAppService(win32serviceutil.ServiceFramework):
         except Exception as e:
             logger.error(f"✗ FATAL ERROR in main(): {e}")
             logger.error(traceback.format_exc())
-            servicemanager.LogErrorMsg(f"Fatal error in main: {e}")
+            try:
+                servicemanager.LogErrorMsg(f"Fatal error in main: {e}")
+            except:
+                pass
             raise
 
 
