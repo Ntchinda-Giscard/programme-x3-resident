@@ -38,6 +38,23 @@ logger.info("=" * 80)
 logger.info("SERVICE STARTING - Log initialized")
 logger.info("=" * 80)
 
+# CRITICAL FIX: Add the service directory to Python path
+# This allows the service to find scheduler.py
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+    logger.info(f"Added to sys.path: {script_dir}")
+
+# Also add the permanent service directory
+permanent_dir = os.path.join(
+    os.getenv('LOCALAPPDATA', os.path.expanduser('~')),
+    'WAZAPOS',
+    'service'
+)
+if permanent_dir not in sys.path:
+    sys.path.insert(0, permanent_dir)
+    logger.info(f"Added to sys.path: {permanent_dir}")
+
 # Try to import scheduler with detailed error logging
 SCHEDULER_AVAILABLE = False
 SCHEDULER_ERROR = None
@@ -47,8 +64,23 @@ try:
     logger.info(f"Python executable: {sys.executable}")
     logger.info(f"Python version: {sys.version}")
     logger.info(f"Current working directory: {os.getcwd()}")
-    logger.info(f"Script directory: {os.path.dirname(__file__)}")
+    logger.info(f"Script directory: {script_dir}")
     logger.info(f"sys.path: {sys.path}")
+    
+    # Check if scheduler.py exists
+    scheduler_path = os.path.join(script_dir, 'scheduler.py')
+    logger.info(f"Looking for scheduler.py at: {scheduler_path}")
+    logger.info(f"scheduler.py exists: {os.path.exists(scheduler_path)}")
+    
+    if not os.path.exists(scheduler_path):
+        # Try permanent directory
+        scheduler_path = os.path.join(permanent_dir, 'scheduler.py')
+        logger.info(f"Trying permanent directory: {scheduler_path}")
+        logger.info(f"scheduler.py exists there: {os.path.exists(scheduler_path)}")
+    
+    # List files in directory for debugging
+    logger.info(f"Files in {script_dir}: {os.listdir(script_dir) if os.path.exists(script_dir) else 'Directory does not exist'}")
+    logger.info(f"Files in {permanent_dir}: {os.listdir(permanent_dir) if os.path.exists(permanent_dir) else 'Directory does not exist'}")
     
     # Import the TaskScheduler class from scheduler module
     from scheduler import TaskScheduler
@@ -122,9 +154,6 @@ class YourAppService(win32serviceutil.ServiceFramework):
         try:
             logger.info("SvcDoRun called - service is starting")
             
-            # Report that we're starting
-            self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
-            
             # Log to Windows Event Log
             servicemanager.LogMsg(
                 servicemanager.EVENTLOG_INFORMATION_TYPE,
@@ -132,13 +161,13 @@ class YourAppService(win32serviceutil.ServiceFramework):
                 (self._svc_name_, '')
             )
             
-            logger.info("Calling main()...")
-            
-            # Report that we've started successfully BEFORE running main
+            # CRITICAL FIX: Report running status IMMEDIATELY, before doing any work
             # This prevents the 1053 timeout error
+            logger.info("Reporting SERVICE_RUNNING status to Windows...")
             self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+            logger.info("✓ Status reported, now calling main()...")
             
-            # Now run the main loop
+            # Now run the main loop (this is blocking, but that's OK now)
             self.main()
             
             logger.info("Main() completed, service ending")
