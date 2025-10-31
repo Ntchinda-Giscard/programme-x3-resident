@@ -25,7 +25,7 @@ def setup_logging():
     import logging
     logging.basicConfig(
         level=logging.DEBUG,
-        format='%(asctime)s - %(levelname)s - %(message)s',
+        format='%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s',
         handlers=[
             logging.FileHandler(log_file, mode='a'),
             logging.StreamHandler()

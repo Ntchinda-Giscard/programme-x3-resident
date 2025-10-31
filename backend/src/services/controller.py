@@ -13,7 +13,7 @@ service_router = APIRouter(
 
 # Configure logging to help with debugging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s',
     handlers=[
         logging.StreamHandler(sys.stdout),

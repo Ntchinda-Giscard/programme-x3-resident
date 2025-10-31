@@ -1,0 +1,26 @@
+2025-10-30 07:41:27,466 - INFO - ================================================================================ - __main__ - <module> - 37 - MainThread
+2025-10-30 07:41:27,467 - INFO - SERVICE STARTING - Log initialized - __main__ - <module> - 38 - MainThread
+2025-10-30 07:41:27,467 - INFO - ================================================================================ - __main__ - <module> - 39 - MainThread
+2025-10-30 07:41:27,467 - INFO - Attempting to import scheduler module... - __main__ - <module> - 46 - MainThread
+2025-10-30 07:41:27,467 - INFO - Python executable: C:\Python313\python.exe - __main__ - <module> - 47 - MainThread
+2025-10-30 07:41:27,467 - INFO - Python version: 3.13.3 (tags/v3.13.3:6280bb5, Apr  8 2025, 14:47:33) [MSC v.1943 64 bit (AMD64)] - __main__ - <module> - 48 - MainThread
+2025-10-30 07:41:27,468 - INFO - Current working directory: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service - __main__ - <module> - 49 - MainThread
+2025-10-30 07:41:27,468 - INFO - Script directory: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service - __main__ - <module> - 50 - MainThread
+2025-10-30 07:41:27,468 - INFO - sys.path: ['c:\\Users\\DIGITAL MARKET\\Documents\\programme-x3-resident\\backend\\src\\windows-service', 'C:\\Python313\\python313.zip', 'C:\\Python313\\DLLs', 'C:\\Python313\\Lib', 'C:\\Python313', 'C:\\Users\\DIGITAL MARKET\\AppData\\Roaming\\Python\\Python313\\site-packages', 'C:\\Users\\DIGITAL MARKET\\AppData\\Roaming\\Python\\Python313\\site-packages\\win32', 'C:\\Users\\DIGITAL MARKET\\AppData\\Roaming\\Python\\Python313\\site-packages\\win32\\lib', 'C:\\Users\\DIGITAL MARKET\\AppData\\Roaming\\Python\\Python313\\site-packages\\Pythonwin', 'C:\\Python313\\Lib\\site-packages'] - __main__ - <module> - 51 - MainThread
+2025-10-30 07:41:27,492 - INFO - TaskScheduler type: <class 'type'> - __main__ - <module> - 58 - MainThread
+2025-10-30 07:41:27,492 - INFO - Service script executed - __main__ - <module> - 233 - MainThread
+2025-10-30 07:41:27,492 - INFO - Arguments: ['c:\\Users\\DIGITAL MARKET\\Documents\\programme-x3-resident\\backend\\src\\windows-service\\service.py', '--startup=auto', 'install'] - __main__ - <module> - 234 - MainThread
+2025-10-30 07:41:27,492 - INFO - Running command line handler... - __main__ - <module> - 242 - MainThread
+2025-10-30 07:42:56,227 - INFO - ================================================================================ - __main__ - <module> - 37 - MainThread
+2025-10-30 07:42:56,228 - INFO - SERVICE STARTING - Log initialized - __main__ - <module> - 38 - MainThread
+2025-10-30 07:42:56,228 - INFO - ================================================================================ - __main__ - <module> - 39 - MainThread
+2025-10-30 07:42:56,229 - INFO - Attempting to import scheduler module... - __main__ - <module> - 46 - MainThread
+2025-10-30 07:42:56,229 - INFO - Python executable: C:\Python313\python.exe - __main__ - <module> - 47 - MainThread
+2025-10-30 07:42:56,229 - INFO - Python version: 3.13.3 (tags/v3.13.3:6280bb5, Apr  8 2025, 14:47:33) [MSC v.1943 64 bit (AMD64)] - __main__ - <module> - 48 - MainThread
+2025-10-30 07:42:56,229 - INFO - Current working directory: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service - __main__ - <module> - 49 - MainThread
+2025-10-30 07:42:56,229 - INFO - Script directory: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service - __main__ - <module> - 50 - MainThread
+2025-10-30 07:42:56,230 - INFO - sys.path: ['c:\\Users\\DIGITAL MARKET\\Documents\\programme-x3-resident\\backend\\src\\windows-service', 'C:\\Python313\\python313.zip', 'C:\\Python313\\DLLs', 'C:\\Python313\\Lib', 'C:\\Python313', 'C:\\Users\\DIGITAL MARKET\\AppData\\Roaming\\Python\\Python313\\site-packages', 'C:\\Users\\DIGITAL MARKET\\AppData\\Roaming\\Python\\Python313\\site-packages\\win32', 'C:\\Users\\DIGITAL MARKET\\AppData\\Roaming\\Python\\Python313\\site-packages\\win32\\lib', 'C:\\Users\\DIGITAL MARKET\\AppData\\Roaming\\Python\\Python313\\site-packages\\Pythonwin', 'C:\\Python313\\Lib\\site-packages'] - __main__ - <module> - 51 - MainThread
+2025-10-30 07:42:56,245 - INFO - TaskScheduler type: <class 'type'> - __main__ - <module> - 58 - MainThread
+2025-10-30 07:42:56,245 - INFO - Service script executed - __main__ - <module> - 233 - MainThread
+2025-10-30 07:42:56,245 - INFO - Arguments: ['c:\\Users\\DIGITAL MARKET\\Documents\\programme-x3-resident\\backend\\src\\windows-service\\service.py', '--startup=auto', 'install'] - __main__ - <module> - 234 - MainThread
+2025-10-30 07:42:56,246 - INFO - Running command line handler... - __main__ - <module> - 242 - MainThread
