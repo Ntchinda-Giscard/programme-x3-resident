@@ -146,7 +146,7 @@ class WazaposService(win32serviceutil.ServiceFramework):
         # Try to initialize the scheduler
         try:
             logger.info("Attempting to import and start scheduler...")
-            from .src.windowsService.scheduler import TaskScheduler
+            from scheduler import TaskScheduler
             
             self.scheduler = TaskScheduler()
             self.scheduler.start()
