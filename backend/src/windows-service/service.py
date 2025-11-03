@@ -8,7 +8,6 @@ import sys
 import time
 import os
 import traceback
-from scheduler import TaskScheduler
 
 # Set up file logging BEFORE anything else
 def setup_logging():
@@ -38,8 +37,7 @@ logger.info("=" * 80)
 logger.info("SERVICE STARTING - Log initialized")
 logger.info("=" * 80)
 
-# CRITICAL FIX: Add the service directory to Python path
-# This allows the service to find scheduler.py
+# Add the service directory to Python path
 script_dir = os.path.dirname(os.path.abspath(__file__))
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
@@ -54,61 +52,6 @@ permanent_dir = os.path.join(
 if permanent_dir not in sys.path:
     sys.path.insert(0, permanent_dir)
     logger.info(f"Added to sys.path: {permanent_dir}")
-
-# Try to import scheduler with detailed error logging
-SCHEDULER_AVAILABLE = False
-SCHEDULER_ERROR = None
-
-try:
-    logger.info("Attempting to import scheduler module...")
-    logger.info(f"Python executable: {sys.executable}")
-    logger.info(f"Python version: {sys.version}")
-    logger.info(f"Current working directory: {os.getcwd()}")
-    logger.info(f"Script directory: {script_dir}")
-    logger.info(f"sys.path: {sys.path}")
-    
-    # Check if scheduler.py exists
-    scheduler_path = os.path.join(script_dir, 'scheduler.py')
-    logger.info(f"Looking for scheduler.py at: {scheduler_path}")
-    logger.info(f"scheduler.py exists: {os.path.exists(scheduler_path)}")
-    
-    if not os.path.exists(scheduler_path):
-        # Try permanent directory
-        scheduler_path = os.path.join(permanent_dir, 'scheduler.py')
-        logger.info(f"Trying permanent directory: {scheduler_path}")
-        logger.info(f"scheduler.py exists there: {os.path.exists(scheduler_path)}")
-    
-    # List files in directory for debugging
-    logger.info(f"Files in {script_dir}: {os.listdir(script_dir) if os.path.exists(script_dir) else 'Directory does not exist'}")
-    logger.info(f"Files in {permanent_dir}: {os.listdir(permanent_dir) if os.path.exists(permanent_dir) else 'Directory does not exist'}")
-    
-    # Import the TaskScheduler class from scheduler module
-    from scheduler import TaskScheduler
-    
-    SCHEDULER_AVAILABLE = True
-    logger.info("✓ Successfully imported TaskScheduler")
-    logger.info(f"TaskScheduler type: {type(TaskScheduler)}")
-    
-except ImportError as e:
-    SCHEDULER_ERROR = f"Import error: {str(e)}"
-    logger.error(f"✗ Failed to import scheduler (ImportError): {e}")
-    logger.error(f"Traceback: {traceback.format_exc()}")
-    
-    # Also log to Windows Event Log (if available)
-    try:
-        servicemanager.LogErrorMsg(f"Failed to import scheduler: {e}")
-    except:
-        pass
-        
-except Exception as e:
-    SCHEDULER_ERROR = f"Unexpected error: {str(e)}"
-    logger.error(f"✗ Failed to import scheduler (Exception): {e}")
-    logger.error(f"Traceback: {traceback.format_exc()}")
-    
-    try:
-        servicemanager.LogErrorMsg(f"Failed to import scheduler: {e}")
-    except:
-        pass
 
 
 class YourAppService(win32serviceutil.ServiceFramework):
@@ -151,23 +94,32 @@ class YourAppService(win32serviceutil.ServiceFramework):
             logger.error(traceback.format_exc())
 
     def SvcDoRun(self):
+        """
+        CRITICAL: This method must report SERVICE_RUNNING status IMMEDIATELY
+        to avoid the 1053 timeout error. All heavy initialization must happen
+        AFTER reporting the running status.
+        """
         try:
+            # STEP 1: Report running status FIRST, before doing ANY work
+            # This is the most critical fix for error 1053
+            self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+            
+            # STEP 2: Now we can do logging and other work safely
+            logger.info("Service reported as RUNNING to Windows")
             logger.info("SvcDoRun called - service is starting")
             
-            # Log to Windows Event Log
-            servicemanager.LogMsg(
-                servicemanager.EVENTLOG_INFORMATION_TYPE,
-                servicemanager.PYS_SERVICE_STARTED,
-                (self._svc_name_, '')
-            )
+            # STEP 3: Log to Windows Event Log (this can be slow, so do it AFTER reporting status)
+            try:
+                servicemanager.LogMsg(
+                    servicemanager.EVENTLOG_INFORMATION_TYPE,
+                    servicemanager.PYS_SERVICE_STARTED,
+                    (self._svc_name_, '')
+                )
+            except Exception as e:
+                logger.warning(f"Could not log to Windows Event Log: {e}")
             
-            # CRITICAL FIX: Report running status IMMEDIATELY, before doing any work
-            # This prevents the 1053 timeout error
-            logger.info("Reporting SERVICE_RUNNING status to Windows...")
-            self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-            logger.info("✓ Status reported, now calling main()...")
-            
-            # Now run the main loop (this is blocking, but that's OK now)
+            # STEP 4: Now run the main loop (this is blocking, but Windows is happy now)
+            logger.info("Calling main()...")
             self.main()
             
             logger.info("Main() completed, service ending")
@@ -185,41 +137,29 @@ class YourAppService(win32serviceutil.ServiceFramework):
             self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
     def main(self):
+        """
+        Main service loop - this runs AFTER we've reported SERVICE_RUNNING status.
+        We can take our time here because Windows already knows we're running.
+        """
         try:
             logger.info("Entering main() method")
             
-            if not SCHEDULER_AVAILABLE:
-                logger.warning("Scheduler not available - running in limited mode")
-                logger.warning(f"Scheduler error was: {SCHEDULER_ERROR}")
-                
-                try:
-                    servicemanager.LogWarningMsg(
-                        f"TaskScheduler not available: {SCHEDULER_ERROR}. "
-                        "Service running in limited mode."
-                    )
-                except:
-                    pass
-                
-                # Keep service alive but don't do anything
-                logger.info("Entering wait loop (limited mode)...")
-                while self.is_alive:
-                    rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
-                    if rc == win32event.WAIT_OBJECT_0:
-                        logger.info("Stop event received in limited mode")
-                        break
-                return
+            # Import scheduler here (lazy import) to avoid delays at module load time
+            scheduler = None
+            scheduler_error = None
             
-            # Initialize and start the scheduler
-            logger.info("Initializing TaskScheduler...")
             try:
-                if SCHEDULER_AVAILABLE and 'TaskScheduler' in globals():
-                    self.scheduler = TaskScheduler()
-                    logger.info("✓ TaskScheduler instance created")
-                else:
-                    raise ImportError("TaskScheduler is not available")
+                logger.info("Attempting to import scheduler module...")
+                from scheduler import TaskScheduler
+                logger.info("✓ Successfully imported TaskScheduler")
+                
+                # Initialize and start the scheduler
+                logger.info("Initializing TaskScheduler...")
+                scheduler = TaskScheduler()
+                logger.info("✓ TaskScheduler instance created")
                 
                 logger.info("Starting scheduler...")
-                self.scheduler.start()
+                scheduler.start()
                 logger.info("✓ TaskScheduler started successfully")
                 
                 try:
@@ -227,16 +167,33 @@ class YourAppService(win32serviceutil.ServiceFramework):
                 except:
                     pass
                 
+            except ImportError as e:
+                scheduler_error = f"Import error: {str(e)}"
+                logger.error(f"✗ Failed to import scheduler: {e}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                
+                try:
+                    servicemanager.LogWarningMsg(
+                        f"TaskScheduler not available: {scheduler_error}. "
+                        "Service running in limited mode."
+                    )
+                except:
+                    pass
+                    
             except Exception as e:
+                scheduler_error = f"Unexpected error: {str(e)}"
                 logger.error(f"✗ Failed to start scheduler: {e}")
                 logger.error(traceback.format_exc())
+                
                 try:
                     servicemanager.LogErrorMsg(f"Failed to start scheduler: {e}")
                 except:
                     pass
-                # Continue anyway, just without scheduler
             
-            # Keep the service running
+            # Store scheduler reference for cleanup
+            self.scheduler = scheduler
+            
+            # Keep the service running - this is the main loop
             logger.info("Entering main service loop...")
             while self.is_alive:
                 # Wait for stop signal (check every 5 seconds)
