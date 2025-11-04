@@ -85,6 +85,8 @@ class YourAppService(win32serviceutil.ServiceFramework):
     _svc_description_ = "Runs scheduled tasks for WAZAPOS App"
 
     def __init__(self, args):
+        self.is_running = True
+
         try:
             logger.info("Initializing service...")
             win32serviceutil.ServiceFramework.__init__(self, args)
@@ -119,114 +121,125 @@ class YourAppService(win32serviceutil.ServiceFramework):
             logger.error(traceback.format_exc())
 
     def SvcDoRun(self):
-        try:
-            logger.info("SvcDoRun called - service is starting")
-            
-            # Report that we're starting
-            self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
-            
-            # Log to Windows Event Log
-            servicemanager.LogMsg(
-                servicemanager.EVENTLOG_INFORMATION_TYPE,
-                servicemanager.PYS_SERVICE_STARTED,
-                (self._svc_name_, '')
-            )
-            
-            logger.info("Calling main()...")
-            
-            # Report that we've started successfully BEFORE running main
-            # This prevents the 1053 timeout error
-            self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-            
-            # Now run the main loop
-            self.main()
-            
-            logger.info("Main() completed, service ending")
-            
-        except Exception as e:
-            logger.error(f"âœ— FATAL ERROR in SvcDoRun: {e}")
-            logger.error(traceback.format_exc())
-            
-            try:
-                servicemanager.LogErrorMsg(f"Service failed: {e}")
-            except:
-                pass
-            
-            # Report service stopped due to error
-            self.ReportServiceStatus(win32service.SERVICE_STOPPED)
+        servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,
+                                  servicemanager.PYS_SERVICE_STARTED,
+                                  (self._svc_name_, ''))
+        self.main()
 
+        # try:
+        #     logger.info("SvcDoRun called - service is starting")
+            
+        #     # Report that we're starting
+        #     self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
+            
+        #     # Log to Windows Event Log
+        #     servicemanager.LogMsg(
+        #         servicemanager.EVENTLOG_INFORMATION_TYPE,
+        #         servicemanager.PYS_SERVICE_STARTED,
+        #         (self._svc_name_, '')
+        #     )
+            
+        #     logger.info("Calling main()...")
+            
+        #     # Report that we've started successfully BEFORE running main
+        #     # This prevents the 1053 timeout error
+        #     self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+            
+        #     # Now run the main loop
+        #     self.main()
+            
+        #     logger.info("Main() completed, service ending")
+            
+        # except Exception as e:
+        #     logger.error(f"âœ— FATAL ERROR in SvcDoRun: {e}")
+        #     logger.error(traceback.format_exc())
+            
+        #     try:
+        #         servicemanager.LogErrorMsg(f"Service failed: {e}")
+        #     except:
+        #         pass
+            
+        #     # Report service stopped due to error
+        #     self.ReportServiceStatus(win32service.SERVICE_STOPPED)
+
+    # def main(self):
+    #     try:
+    #         logger.info("Entering main() method")
+            
+    #         if not SCHEDULER_AVAILABLE:
+    #             logger.warning("Scheduler not available - running in limited mode")
+    #             logger.warning(f"Scheduler error was: {SCHEDULER_ERROR}")
+                
+    #             try:
+    #                 servicemanager.LogWarningMsg(
+    #                     f"TaskScheduler not available: {SCHEDULER_ERROR}. "
+    #                     "Service running in limited mode."
+    #                 )
+    #             except:
+    #                 pass
+                
+    #             # Keep service alive but don't do anything
+    #             logger.info("Entering wait loop (limited mode)...")
+    #             while self.is_alive:
+    #                 rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
+    #                 if rc == win32event.WAIT_OBJECT_0:
+    #                     logger.info("Stop event received in limited mode")
+    #                     break
+    #             return
+            
+    #         # Initialize and start the scheduler
+    #         logger.info("Initializing TaskScheduler...")
+    #         try:
+    #             if SCHEDULER_AVAILABLE and 'TaskScheduler' in globals():
+    #                 self.scheduler = TaskScheduler()
+    #                 logger.info("âœ“ TaskScheduler instance created")
+    #             else:
+    #                 raise ImportError("TaskScheduler is not available")
+                
+    #             logger.info("Starting scheduler...")
+    #             self.scheduler.start()
+    #             logger.info("âœ“ TaskScheduler started successfully")
+                
+    #             try:
+    #                 servicemanager.LogInfoMsg("TaskScheduler started successfully")
+    #             except:
+    #                 pass
+                
+    #         except Exception as e:
+    #             logger.error(f"âœ— Failed to start scheduler: {e}")
+    #             logger.error(traceback.format_exc())
+    #             try:
+    #                 servicemanager.LogErrorMsg(f"Failed to start scheduler: {e}")
+    #             except:
+    #                 pass
+    #             # Continue anyway, just without scheduler
+            
+    #         # Keep the service running
+    #         logger.info("Entering main service loop...")
+    #         while self.is_alive:
+    #             # Wait for stop signal (check every 5 seconds)
+    #             rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
+    #             if rc == win32event.WAIT_OBJECT_0:
+    #                 logger.info("Stop event received")
+    #                 break
+            
+    #         logger.info("Exiting main service loop")
+            
+    #     except Exception as e:
+    #         logger.error(f"âœ— FATAL ERROR in main(): {e}")
+    #         logger.error(traceback.format_exc())
+    #         try:
+    #             servicemanager.LogErrorMsg(f"Fatal error in main: {e}")
+    #         except:
+    #             pass
+    #         raise
+    
     def main(self):
-        try:
-            logger.info("Entering main() method")
-            
-            if not SCHEDULER_AVAILABLE:
-                logger.warning("Scheduler not available - running in limited mode")
-                logger.warning(f"Scheduler error was: {SCHEDULER_ERROR}")
-                
-                try:
-                    servicemanager.LogWarningMsg(
-                        f"TaskScheduler not available: {SCHEDULER_ERROR}. "
-                        "Service running in limited mode."
-                    )
-                except:
-                    pass
-                
-                # Keep service alive but don't do anything
-                logger.info("Entering wait loop (limited mode)...")
-                while self.is_alive:
-                    rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
-                    if rc == win32event.WAIT_OBJECT_0:
-                        logger.info("Stop event received in limited mode")
-                        break
-                return
-            
-            # Initialize and start the scheduler
-            logger.info("Initializing TaskScheduler...")
-            try:
-                if SCHEDULER_AVAILABLE and 'TaskScheduler' in globals():
-                    self.scheduler = TaskScheduler()
-                    logger.info("âœ“ TaskScheduler instance created")
-                else:
-                    raise ImportError("TaskScheduler is not available")
-                
-                logger.info("Starting scheduler...")
-                self.scheduler.start()
-                logger.info("âœ“ TaskScheduler started successfully")
-                
-                try:
-                    servicemanager.LogInfoMsg("TaskScheduler started successfully")
-                except:
-                    pass
-                
-            except Exception as e:
-                logger.error(f"âœ— Failed to start scheduler: {e}")
-                logger.error(traceback.format_exc())
-                try:
-                    servicemanager.LogErrorMsg(f"Failed to start scheduler: {e}")
-                except:
-                    pass
-                # Continue anyway, just without scheduler
-            
-            # Keep the service running
-            logger.info("Entering main service loop...")
-            while self.is_alive:
-                # Wait for stop signal (check every 5 seconds)
-                rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
-                if rc == win32event.WAIT_OBJECT_0:
-                    logger.info("Stop event received")
-                    break
-            
-            logger.info("Exiting main service loop")
-            
-        except Exception as e:
-            logger.error(f"âœ— FATAL ERROR in main(): {e}")
-            logger.error(traceback.format_exc())
-            try:
-                servicemanager.LogErrorMsg(f"Fatal error in main: {e}")
-            except:
-                pass
-            raise
-
+            # Your service logic goes here
+            while self.is_running and win32event.WaitForSingleObject(self.hWaitStop, 5000) != win32event.WAIT_OBJECT_0:
+                # Perform your task repeatedly
+                print("Service is running...")
+                pass # Replace with your actual task
 
 if __name__ == '__main__':
     try:
