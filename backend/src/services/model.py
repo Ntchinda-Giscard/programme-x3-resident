@@ -9,7 +9,7 @@ class ServiceStatus(BaseModel):
 
 # --- Response Models (Optional) ---
 class ServiceResponse(BaseModel):
-    success: bool
+    success: Optional[bool] = None
     message:  Optional[str] = None
     error: Optional[str] = None
     status: Optional[ServiceStatus] = None

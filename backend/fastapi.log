@@ -1,0 +1,82 @@
+2025-10-24 16:49:57,086 - INFO - Current service status: {'installed': False, 'status': 'not_installed', 'status_code': None} - service_manager - install_service - 162 - MainThread
+2025-10-24 16:49:57,086 - INFO - Running in development mode - service_manager - get_service_script_path - 92 - MainThread
+2025-10-24 16:49:57,087 - INFO - Final service script path: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - get_service_script_path - 96 - MainThread
+2025-10-24 16:49:57,087 - INFO - Service script exists: True - service_manager - get_service_script_path - 97 - MainThread
+2025-10-24 16:49:57,088 - INFO - Using Python: C:\Python313\python.exe - service_manager - install_service - 172 - MainThread
+2025-10-24 16:49:57,088 - INFO - Service result: None - src.services.controller - install_service - 32 - MainThread
+2025-10-29 10:13:01,168 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-29 10:13:01,229 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-29 10:13:43,712 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-29 10:13:43,717 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-29 10:15:21,377 - INFO - Current service status: {'installed': False, 'status': 'not_installed', 'status_code': None} - service_manager - install_service - 163 - MainThread
+2025-10-29 10:15:21,378 - INFO - Running in development mode - service_manager - get_service_script_path - 92 - MainThread
+2025-10-29 10:15:21,379 - INFO - Final service script path: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - get_service_script_path - 96 - MainThread
+2025-10-29 10:15:21,379 - INFO - Service script exists: True - service_manager - get_service_script_path - 97 - MainThread
+2025-10-29 10:15:21,382 - INFO - Using Python: C:\Python313\python.exe - service_manager - install_service - 174 - MainThread
+2025-10-29 10:15:21,383 - INFO - Service script: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - install_service - 175 - MainThread
+2025-10-29 10:15:21,384 - INFO - Running install command: C:\Python313\python.exe c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py --startup=auto install - service_manager - install_service - 186 - MainThread
+2025-10-29 10:15:21,385 - INFO - Working directory: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service - service_manager - install_service - 187 - MainThread
+2025-10-29 10:15:21,386 - INFO - About to execute subprocess.run... - service_manager - install_service - 191 - MainThread
+2025-10-29 10:15:21,841 - INFO - Subprocess completed - service_manager - install_service - 200 - MainThread
+2025-10-29 10:15:21,841 - INFO - Return code: 1 - service_manager - install_service - 201 - MainThread
+2025-10-29 10:15:21,848 - INFO - STDOUT:  - service_manager - install_service - 202 - MainThread
+2025-10-29 10:15:21,849 - INFO - STDERR: Traceback (most recent call last):
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py", line 9, in <module>
+    from scheduler import TaskScheduler
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\scheduler.py", line 2, in <module>
+    import schedule
+ModuleNotFoundError: No module named 'schedule'
+ - service_manager - install_service - 203 - MainThread
+2025-10-29 10:15:21,850 - ERROR - Installation failed with error: Traceback (most recent call last):
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py", line 9, in <module>
+    from scheduler import TaskScheduler
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\scheduler.py", line 2, in <module>
+    import schedule
+ModuleNotFoundError: No module named 'schedule'
+ - service_manager - install_service - 211 - MainThread
+2025-10-29 10:15:21,851 - ERROR - Unexpected error during installation: Installation failed: Traceback (most recent call last):
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py", line 9, in <module>
+    from scheduler import TaskScheduler
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\scheduler.py", line 2, in <module>
+    import schedule
+ModuleNotFoundError: No module named 'schedule'
+ - service_manager - install_service - 221 - MainThread
+2025-10-29 10:15:21,851 - ERROR - Exception type: Exception - service_manager - install_service - 222 - MainThread
+2025-10-29 10:15:21,855 - ERROR - Traceback: Traceback (most recent call last):
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\service_manager.py", line 212, in install_service
+    raise Exception(f"Installation failed: {error_msg}")
+Exception: Installation failed: Traceback (most recent call last):
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py", line 9, in <module>
+    from scheduler import TaskScheduler
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\scheduler.py", line 2, in <module>
+    import schedule
+ModuleNotFoundError: No module named 'schedule'
+
+ - service_manager - install_service - 224 - MainThread
+2025-10-29 10:15:21,862 - ERROR - Error installing service: Failed to install service: Installation failed: Traceback (most recent call last):
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py", line 9, in <module>
+    from scheduler import TaskScheduler
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\scheduler.py", line 2, in <module>
+    import schedule
+ModuleNotFoundError: No module named 'schedule'
+ - src.services.controller - install_service - 35 - MainThread
+2025-10-29 10:20:49,968 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-29 10:20:49,971 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-29 10:20:54,539 - INFO - Current service status: {'installed': False, 'status': 'not_installed', 'status_code': None} - service_manager - install_service - 163 - MainThread
+2025-10-29 10:20:54,540 - INFO - Running in development mode - service_manager - get_service_script_path - 92 - MainThread
+2025-10-29 10:20:54,541 - INFO - Final service script path: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - get_service_script_path - 96 - MainThread
+2025-10-29 10:20:54,573 - INFO - Service script exists: True - service_manager - get_service_script_path - 97 - MainThread
+2025-10-29 10:20:54,575 - INFO - Using Python: C:\Python313\python.exe - service_manager - install_service - 174 - MainThread
+2025-10-29 10:20:54,575 - INFO - Service script: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - install_service - 175 - MainThread
+2025-10-29 10:20:54,575 - INFO - Running install command: C:\Python313\python.exe c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py --startup=auto install - service_manager - install_service - 186 - MainThread
+2025-10-29 10:20:54,576 - INFO - Working directory: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service - service_manager - install_service - 187 - MainThread
+2025-10-29 10:20:54,576 - INFO - About to execute subprocess.run... - service_manager - install_service - 191 - MainThread
+2025-10-29 10:20:55,007 - INFO - Subprocess completed - service_manager - install_service - 200 - MainThread
+2025-10-29 10:20:55,007 - INFO - Return code: 0 - service_manager - install_service - 201 - MainThread
+2025-10-29 10:20:55,009 - INFO - STDOUT: Installing service WAZAPOS
+moving host exe 'C:\Users\DIGITAL MARKET\AppData\Roaming\Python\Python313\site-packages\win32\pythonservice.exe' -> 'C:\Python313\pythonservice.exe'
+Service installed
+ - service_manager - install_service - 202 - MainThread
+2025-10-29 10:20:55,014 - INFO - STDERR:  - service_manager - install_service - 203 - MainThread
+2025-10-29 10:20:55,016 - INFO - Returning success: Service installed successfully - service_manager - install_service - 207 - MainThread
+2025-10-29 10:20:55,017 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 32 - MainThread
