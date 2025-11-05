@@ -1,117 +1,115 @@
-# Save this as test_service_install.py in the same directory as service_manager.py
-# Run it directly: python test_service_install.py
-
+import win32serviceutil
+import win32service
+import win32event
+import servicemanager
 import sys
+import os
 import logging
+from pathlib import Path
+from typing import List
+import time
 
-# Set up detailed logging
+# Setup logging
+log_dir = Path(os.getenv('APPDATA') or os.path.expanduser('~')) / 'WAZAPOS' / 'service'
+log_dir.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(
-    level=logging.DEBUG,  # Use DEBUG for even more detail
-    format='%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler('diagnostic.log')
+        logging.FileHandler(log_dir / 'test_service.log'),
+        logging.StreamHandler()
     ]
 )
-
 logger = logging.getLogger(__name__)
 
-def trace_function_calls():
-    """Enable tracing to see every line of code that executes"""
-    import sys
-    
-    def trace_calls(frame, event, arg):
-        if event != 'line':
-            return
-        # Only trace service_manager module
-        if 'service_manager' in frame.f_code.co_filename:
-            line_no = frame.f_lineno
-            func_name = frame.f_code.co_name
-            filename = frame.f_code.co_filename
-            logger.debug(f"TRACE: {filename}:{line_no} in {func_name}")
-        return trace_calls
-    
-    sys.settrace(trace_calls)
 
-def main():
-    logger.info("=" * 80)
-    logger.info("DIAGNOSTIC TEST - Service Installation")
-    logger.info("=" * 80)
-    
-    # Import service_manager
+class MinimalTestService(win32serviceutil.ServiceFramework):
+    _svc_name_ = "WAZAPOS_TEST"
+    _svc_display_name_ = "WAZAPOS Test Service"
+    _svc_description_ = "Test service for WAZAPOS"
+
+    def __init__(self, args: List[str]):
+        # CRITICAL: Must call parent __init__ FIRST
+        win32serviceutil.ServiceFramework.__init__(self, args)  # type: ignore
+        # Create the stop event AFTER parent init
+        self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
+        self.is_running = False
+        logger.info("Service initialized")
+
+    def SvcStop(self):
+        logger.info("Service stop requested")
+        self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
+        win32event.SetEvent(self.hWaitStop)
+        self.is_running = False
+
+    def SvcDoRun(self):
+        logger.info("Service starting...")
+        try:
+            # Report that service is running
+            servicemanager.LogMsg(
+                servicemanager.EVENTLOG_INFORMATION_TYPE,
+                servicemanager.PYS_SERVICE_STARTED,
+                (self._svc_name_, '')
+            )
+            self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+            logger.info("Service is now running")
+            self.is_running = True
+
+            # Main loop - just wait for stop event
+            while self.is_running:
+                # Wait for stop event (timeout 5 seconds)
+                rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
+                if rc == win32event.WAIT_OBJECT_0:
+                    logger.info("Stop event received")
+                    break
+
+        except Exception as e:
+            logger.exception(f"Error in SvcDoRun: {e}")
+            self.ReportServiceStatus(win32service.SERVICE_STOPPED)
+            raise
+
+        logger.info("Service stopped")
+        self.ReportServiceStatus(win32service.SERVICE_STOPPED)
+
+
+def handle_command_line(argv: List[str]) -> None:
     try:
-        logger.info("Step 1: Importing service_manager module...")
-        import service_manager
-        logger.info("✓ service_manager imported successfully")
+        w32ts = win32serviceutil.GetServiceClassString(MinimalTestService)
+        win32serviceutil.HandleCommandLine(MinimalTestService)
     except Exception as e:
-        logger.error(f"✗ Failed to import service_manager: {e}")
-        import traceback
-        traceback.print_exc()
-        return
-    
-    # Check if install_service function exists
-    logger.info("\nStep 2: Checking if install_service function exists...")
-    if hasattr(service_manager, 'install_service'):
-        logger.info("✓ install_service function found")
-        
-        # Get function details
-        import inspect
-        func = service_manager.install_service
-        source_file = inspect.getfile(func)
-        source_lines = inspect.getsourcelines(func)
-        line_number = source_lines[1]
-        
-        logger.info(f"  Function defined in: {source_file}")
-        logger.info(f"  Starting at line: {line_number}")
-        logger.info(f"  Total lines in function: {len(source_lines[0])}")
-        
-        # Show first 10 lines of the function
-        logger.info("\n  First 10 lines of function:")
-        for i, line in enumerate(source_lines[0][:10], start=line_number):
-            logger.info(f"    {i}: {line.rstrip()}")
-    else:
-        logger.error("✗ install_service function NOT found!")
-        return
-    
-    # Enable line-by-line tracing
-    logger.info("\nStep 3: Enabling line-by-line execution tracing...")
-    trace_function_calls()
-    
-    # Try to call install_service
-    logger.info("\nStep 4: Calling install_service()...")
-    logger.info("-" * 80)
-    
-    try:
-        result = service_manager.install_service()
-        
-        logger.info("-" * 80)
-        logger.info(f"\nStep 5: Function returned successfully!")
-        logger.info(f"  Return value: {result}")
-        logger.info(f"  Return type: {type(result)}")
-        
-        if result is None:
-            logger.error("\n⚠ WARNING: Function returned None!")
-            logger.error("This means the function completed but didn't return a value.")
-            logger.error("Check the diagnostic.log file to see which lines were executed.")
-        else:
-            logger.info(f"\n✓ SUCCESS: {result}")
+        logger.exception(f"Command line error: {e}")
+        print(f"Error: {e}")
+
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
+        print('2025-11-05 12:43:17,089 - INFO - Running in debug mode')
+        try:
+            log_dir = Path(os.getenv('APPDATA') or Path.home()) / 'WAZAPOS' / 'service'
+            log_dir.mkdir(parents=True, exist_ok=True)
             
-    except Exception as e:
-        logger.info("-" * 80)
-        logger.error(f"\nStep 5: Function raised an exception!")
-        logger.error(f"  Exception type: {type(e).__name__}")
-        logger.error(f"  Exception message: {str(e)}")
-        logger.error("\nFull traceback:")
-        import traceback
-        traceback.print_exc()
-    
-    # Disable tracing
-    sys.settrace(None)
-    
-    logger.info("\n" + "=" * 80)
-    logger.info("DIAGNOSTIC TEST COMPLETE")
-    logger.info("Check 'diagnostic.log' for detailed line-by-line execution trace")
-    logger.info("=" * 80)
+            logging.basicConfig(
+                level=logging.INFO,
+                format='%(asctime)s - %(levelname)s - %(message)s',
+                handlers=[
+                    logging.FileHandler(log_dir / 'test_service_debug.log'),
+                    logging.StreamHandler()
+                ]
+            )
+            
+            logging.info('Debug mode: Running service logic directly')
+            logging.info('Service is running. Press Ctrl+C to stop.')
+            
+            # Run the service main logic directly
+            while True:
+                time.sleep(1)
+                
+        except KeyboardInterrupt:
+            logging.info('Service stopped by user')
+        except Exception as e:
+            logging.error(f"Error: {e}", exc_info=True)
+            import traceback
+            traceback.print_exc()
+    else:
+        win32serviceutil.HandleCommandLine(MinimalTestService)
 
-if __name__ == "__main__":
-    main()

@@ -17,13 +17,11 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# Define your task function directly in this file
 def your_task_function():
     """Example task function that gets executed by the scheduler"""
     logger.info("Task executed successfully")
     
     # TODO: Add your actual task logic here
-    # For example:
     # - Database cleanup
     # - Send notifications
     # - Process queued jobs
@@ -40,30 +38,38 @@ class TaskScheduler:
         """Define your scheduled tasks here"""
         logger.info("Setting up scheduled tasks...")
         
-        # Run every day at 10:30 AM
-        schedule.every().day.at("10:30").do(your_task_function)
-        logger.info("Scheduled: Daily task at 10:30 AM")
-        
-        # Run every hour
-        schedule.every().hour.do(your_task_function)
-        logger.info("Scheduled: Hourly task")
-        
-        # Run every 5 minutes
-        schedule.every(5).minutes.do(your_task_function)
-        logger.info("Scheduled: Task every 5 minutes")
-        
-        logger.info("All schedules configured")
+        try:
+            # Run every day at 10:30 AM
+            schedule.every().day.at("10:30").do(your_task_function)
+            logger.info("Scheduled: Daily task at 10:30 AM")
+            
+            # Run every hour
+            schedule.every().hour.do(your_task_function)
+            logger.info("Scheduled: Hourly task")
+            
+            # Run every 5 minutes
+            schedule.every(5).minutes.do(your_task_function)
+            logger.info("Scheduled: Task every 5 minutes")
+            
+            logger.info("All schedules configured successfully")
+        except Exception as e:
+            logger.error(f"Error setting up schedules: {e}")
+            raise
         
     def run(self):
         """Run the scheduler loop"""
-        logger.info("Scheduler loop starting...")
-        self.setup_schedules()
-        
-        while self.running:
-            schedule.run_pending()
-            time.sleep(1)
-        
-        logger.info("Scheduler loop ended")
+        try:
+            logger.info("Scheduler loop starting...")
+            self.setup_schedules()
+            
+            while self.running:
+                schedule.run_pending()
+                time.sleep(1)
+            
+            logger.info("Scheduler loop ended")
+        except Exception as e:
+            logger.error(f"Error in scheduler loop: {e}")
+            raise
     
     def start(self):
         """Start the scheduler in a separate thread"""
