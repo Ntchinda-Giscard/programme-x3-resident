@@ -7,7 +7,6 @@ import os
 import logging
 from pathlib import Path
 from typing import List
-import time
 
 # Setup logging
 log_dir = Path(os.getenv('APPDATA') or os.path.expanduser('~')) / 'WAZAPOS' / 'service'
@@ -82,34 +81,12 @@ def handle_command_line(argv: List[str]) -> None:
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-        print('2025-11-05 12:43:17,089 - INFO - Running in debug mode')
-        try:
-            log_dir = Path(os.getenv('APPDATA') or Path.home()) / 'WAZAPOS' / 'service'
-            log_dir.mkdir(parents=True, exist_ok=True)
-            
-            logging.basicConfig(
-                level=logging.INFO,
-                format='%(asctime)s - %(levelname)s - %(message)s',
-                handlers=[
-                    logging.FileHandler(log_dir / 'test_service_debug.log'),
-                    logging.StreamHandler()
-                ]
-            )
-            
-            logging.info('Debug mode: Running service logic directly')
-            logging.info('Service is running. Press Ctrl+C to stop.')
-            
-            # Run the service main logic directly
-            while True:
-                time.sleep(1)
-                
-        except KeyboardInterrupt:
-            logging.info('Service stopped by user')
-        except Exception as e:
-            logging.error(f"Error: {e}", exc_info=True)
-            import traceback
-            traceback.print_exc()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == 'debug':
+            logger.info("Running in debug mode")
+            svc = MinimalTestService([])
+            svc.SvcDoRun()
+        else:
+            handle_command_line(sys.argv)
     else:
-        win32serviceutil.HandleCommandLine(MinimalTestService)
-
+        handle_command_line(sys.argv)
