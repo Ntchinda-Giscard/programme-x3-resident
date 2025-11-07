@@ -46,23 +46,7 @@ def get_odbc_source_names():
 
     return sources
 
-def add_database_server(input: DatabaseServerAdd, db: Session):
-    db.query(DatabaseConfiguration).delete()
-    db.commit()
-    
-    new = DatabaseConfiguration(
-        odbc_source = input.odbc_source,
-        connection_type = input.connection_type,
-        db_type = input.db_type,  
-        db_server = input.db_server,  
-        db_username = input.db_username,
-        db_password = input.db_password
-    )
-    db.add(new)
-    db.commit()
-    db.refresh(new)
-    db.close()
-    return new
+
 
 @odbc_router.get("/odbc-sources")
 async def list_odbc_sources():
@@ -76,8 +60,25 @@ async def delete_odbc_source(db: Session = Depends(get_db)):
     db.commit()
     db.close()
 
-@odbc_router.post("/add-odbc")
+def add_database_server(input: DatabaseServerAdd, db: Session):
+    db.query(DatabaseConfiguration).delete()
+    db.commit()
+    
+    new = DatabaseConfiguration(
+        odbc_source=input.odbc_source,
+        connection_type=input.connection_type,
+        host=input.host,
+        port=input.port,
+        database=input.database,
+        username=input.username,
+        password=input.password
+    )
+    db.add(new)
+    db.commit()
+    db.refresh(new)
+    return new
+
+@odbc_router.post("/add-database")
 async def add_database(input: DatabaseServerAdd, db: Session = Depends(get_db)):
     result = add_database_server(input, db)
-
-    return {"server", result}
+    return {"server": result}
