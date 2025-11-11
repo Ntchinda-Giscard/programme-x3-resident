@@ -1,4 +1,3 @@
-# backend/src/windowsService/service.py
 import sys
 import os
 
@@ -64,52 +63,60 @@ def setup_logging():
     )
     os.makedirs(log_dir, exist_ok=True)
     
-    log_file = os.path.join(log_dir, 'service_debug.log')
-    
-    # Create a custom handler that forces flushing
     class FlushingFileHandler(logging.FileHandler):
         def emit(self, record):
             super().emit(record)
             self.flush()  # Force flush after every log
     
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(levelname)s - %(message)s - %(funcName)s - %(lineno)d',
-        handlers=[
-            FlushingFileHandler(log_file, mode='a'),
-            logging.StreamHandler(sys.stdout)
-        ],
-        force=True  # Override any existing config
-    )
+    # Setup SERVICE logger
+    service_logger = logging.getLogger('service')
+    service_logger.setLevel(logging.DEBUG)
+    service_logger.propagate = False  # Don't propagate to root logger
     
-    logger = logging.getLogger(__name__)
+    service_logger.handlers.clear()
     
-    # Test that logging works
-    logger.info("=" * 80)
-    logger.info("LOGGING INITIALIZED")
-    logger.info(f"Log file: {log_file}")
-    logger.info("=" * 80)
+    service_log_file = os.path.join(log_dir, 'service_debug.log')
+    service_handler = FlushingFileHandler(service_log_file, mode='a')
+    service_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s - %(funcName)s - %(lineno)d'))
+    service_logger.addHandler(service_handler)
+    service_logger.addHandler(logging.StreamHandler(sys.stdout))
     
-    # Force all handlers to flush
-    for handler in logger.handlers:
+    # Setup SCHEDULER logger with its own file
+    scheduler_logger = logging.getLogger('scheduler')
+    scheduler_logger.setLevel(logging.DEBUG)
+    scheduler_logger.propagate = False  # Don't propagate to root logger
+    
+    scheduler_logger.handlers.clear()
+    
+    scheduler_log_file = os.path.join(log_dir, 'scheduler.log')
+    scheduler_handler = FlushingFileHandler(scheduler_log_file, mode='a')
+    scheduler_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s'))
+    scheduler_logger.addHandler(scheduler_handler)
+    scheduler_logger.addHandler(logging.StreamHandler(sys.stdout))
+    
+    service_logger.info("=" * 80)
+    service_logger.info("LOGGING INITIALIZED")
+    service_logger.info(f"Service log file: {service_log_file}")
+    service_logger.info(f"Service logger handlers: {len(service_logger.handlers)}")
+    service_logger.info(f"Scheduler log file: {scheduler_log_file}")
+    service_logger.info(f"Scheduler logger handlers: {len(scheduler_logger.handlers)}")
+    service_logger.info("=" * 80)
+    
+    for handler in service_logger.handlers:
+        handler.flush()
+    for handler in scheduler_logger.handlers:
         handler.flush()
     
-    return logger
+    return service_logger, scheduler_logger
 
 emergency_write("Setting up logging...")
-logger = setup_logging()
+logger, scheduler_logger = setup_logging()
 emergency_write("Logging setup complete")
 
 # windowsService/scheduler.py
 import schedule
-import time
-import threading
-import logging
-import sys
-import os
 from datetime import datetime
 
-# Setup logging
 log_dir = os.path.join(
     os.getenv('LOCALAPPDATA', os.path.expanduser('~')),
     'WAZAPOS',
@@ -117,122 +124,109 @@ log_dir = os.path.join(
 )
 os.makedirs(log_dir, exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler(os.path.join(log_dir, 'scheduler.log'), mode='a')
-    ]
-)
-
-logger = logging.getLogger(__name__)
-
 # Log immediately when module is loaded
-logger.info("=" * 60)
-logger.info("SCHEDULER MODULE LOADED")
-logger.info("=" * 60)
+scheduler_logger.info("=" * 60)
+scheduler_logger.info("SCHEDULER MODULE LOADED")
+scheduler_logger.info("=" * 60)
 
 def your_task_function():
     """Example task function that gets executed by the scheduler"""
     try:
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        logger.info(f"=" * 60)
-        logger.info(f"TASK EXECUTED AT: {timestamp}")
-        logger.info(f"=" * 60)
+        scheduler_logger.info(f"=" * 60)
+        scheduler_logger.info(f"TASK EXECUTED AT: {timestamp}")
+        scheduler_logger.info(f"=" * 60)
         
         # Write to a separate task execution log for easy verification
         task_log = os.path.join(log_dir, 'task_executions.log')
         with open(task_log, 'a') as f:
             f.write(f"{timestamp} - Task executed successfully\n")
-        
-        # TODO: Add your actual task logic here
-        # Since win10toast doesn't work from services, use file-based notification
-        # or IPC to communicate with your Electron app
+            f.flush()
         
         # Example: Write to a file that your Electron app can monitor
         notification_file = os.path.join(log_dir, 'pending_notifications.txt')
         with open(notification_file, 'a') as f:
             f.write(f"{timestamp}|Scheduler Task|Your scheduled task has been executed.\n")
+            f.flush()
         
-        logger.info("Task completed successfully - notification queued")
+        scheduler_logger.info("Task completed successfully - notification queued")
         
     except Exception as e:
-        logger.error(f"Error in task execution: {e}")
+        scheduler_logger.error(f"Error in task execution: {e}")
         import traceback
-        logger.error(traceback.format_exc())
+        scheduler_logger.error(traceback.format_exc())
 
 class TaskScheduler:
     def __init__(self):
         self.running = False
         self.thread = None
         self.task_count = 0
-        logger.info("TaskScheduler initialized")
+        scheduler_logger.info("TaskScheduler initialized")
         
     def setup_schedules(self):
-        logger.info("Setting up scheduled tasks...")
+        scheduler_logger.info("Setting up scheduled tasks...")
 
         try:
             # Run every 5 minutes only
             schedule.every(5).minutes.do(self._wrapped_task, "Every 5 minutes")
-            logger.info("Scheduled: Task every 5 minutes")
+            scheduler_logger.info("Scheduled: Task every 5 minutes")
 
-            logger.info("All schedules configured successfully")
-            logger.info(f"Total scheduled jobs: {len(schedule.jobs)}")
+            scheduler_logger.info("All schedules configured successfully")
+            scheduler_logger.info(f"Total scheduled jobs: {len(schedule.jobs)}")
 
         except Exception as e:
-            logger.error(f"Error setting up schedules: {e}")
+            scheduler_logger.error(f"Error setting up schedules: {e}")
             raise
 
     
     def _wrapped_task(self, task_name):
         """Wrapper that adds tracking to task execution"""
         self.task_count += 1
-        logger.info(f"Executing task '{task_name}' (execution #{self.task_count})")
+        scheduler_logger.info(f"Executing task '{task_name}' (execution #{self.task_count})")
         your_task_function()
-        logger.info(f"Completed task '{task_name}'")
+        scheduler_logger.info(f"Completed task '{task_name}'")
         
     def run(self):
         """Run the scheduler loop"""
         try:
-            logger.info("Scheduler loop starting...")
+            scheduler_logger.info("Scheduler loop starting...")
             self.setup_schedules()
             
-            logger.info("Entering scheduler loop - waiting for tasks...")
+            scheduler_logger.info("Entering scheduler loop - waiting for tasks...")
             iteration = 0
             while self.running:
                 iteration += 1
                 
                 # Log every 60 iterations (roughly every minute) to show scheduler is alive
                 if iteration % 60 == 0:
-                    logger.info(f"Scheduler alive - {len(schedule.jobs)} jobs scheduled, {self.task_count} tasks executed so far")
-                    logger.info(f"Next run times: {[str(job.next_run) for job in schedule.jobs[:3]]}")
+                    scheduler_logger.info(f"Scheduler alive - {len(schedule.jobs)} jobs scheduled, {self.task_count} tasks executed so far")
+                    scheduler_logger.info(f"Next run times: {[str(job.next_run) for job in schedule.jobs[:3]]}")
                 
                 schedule.run_pending()
                 time.sleep(1)
             
-            logger.info("Scheduler loop ended")
+            scheduler_logger.info("Scheduler loop ended")
         except Exception as e:
-            logger.error(f"Error in scheduler loop: {e}")
+            scheduler_logger.error(f"Error in scheduler loop: {e}")
             import traceback
-            logger.error(traceback.format_exc())
+            scheduler_logger.error(traceback.format_exc())
             raise
     
     def start(self):
         """Start the scheduler in a separate thread"""
-        logger.info("Starting scheduler thread...")
+        scheduler_logger.info("Starting scheduler thread...")
         self.running = True
         self.thread = threading.Thread(target=self.run, daemon=True)
         self.thread.start()
-        logger.info("Scheduler thread started")
+        scheduler_logger.info("Scheduler thread started")
     
     def stop(self):
         """Stop the scheduler"""
-        logger.info("Stopping scheduler...")
+        scheduler_logger.info("Stopping scheduler...")
         self.running = False
         if self.thread:
             self.thread.join(timeout=5)
-        logger.info(f"Scheduler stopped - Total tasks executed: {self.task_count}")
+        scheduler_logger.info(f"Scheduler stopped - Total tasks executed: {self.task_count}")
 
 
 class YourAppService(win32serviceutil.ServiceFramework):
