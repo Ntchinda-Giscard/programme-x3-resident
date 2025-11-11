@@ -7,7 +7,7 @@ import sys
 import os
 from datetime import datetime
 
-# Setup logging with forced flushing
+# Setup logging
 log_dir = os.path.join(
     os.getenv('LOCALAPPDATA', os.path.expanduser('~')),
     'WAZAPOS',
@@ -15,50 +15,45 @@ log_dir = os.path.join(
 )
 os.makedirs(log_dir, exist_ok=True)
 
-# Custom handler that forces flushing
-class FlushingFileHandler(logging.FileHandler):
-    def emit(self, record):
-        super().emit(record)
-        self.flush()
-
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    format='%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        FlushingFileHandler(os.path.join(log_dir, 'scheduler.log'), mode='a')
-    ],
-    force=True
+        logging.FileHandler(os.path.join(log_dir, 'scheduler.log'), mode='a')
+    ]
 )
 
 logger = logging.getLogger(__name__)
-logger.info("="*60)
+
+# Log immediately when module is loaded
+logger.info("=" * 60)
 logger.info("SCHEDULER MODULE LOADED")
-logger.info("="*60)
+logger.info("=" * 60)
 
 def your_task_function():
     """Example task function that gets executed by the scheduler"""
     try:
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        logger.info("=" * 60)
+        logger.info(f"=" * 60)
         logger.info(f"TASK EXECUTED AT: {timestamp}")
-        logger.info("=" * 60)
+        logger.info(f"=" * 60)
         
-        # Write to task executions log
+        # Write to a separate task execution log for easy verification
         task_log = os.path.join(log_dir, 'task_executions.log')
         with open(task_log, 'a') as f:
             f.write(f"{timestamp} - Task executed successfully\n")
-            f.flush()
-            os.fsync(f.fileno())  # Force OS write
         
-        # Write notification file for Electron app
+        # TODO: Add your actual task logic here
+        # Since win10toast doesn't work from services, use file-based notification
+        # or IPC to communicate with your Electron app
+        
+        # Example: Write to a file that your Electron app can monitor
         notification_file = os.path.join(log_dir, 'pending_notifications.txt')
         with open(notification_file, 'a') as f:
             f.write(f"{timestamp}|Scheduler Task|Your scheduled task has been executed.\n")
-            f.flush()
-            os.fsync(f.fileno())
         
-        logger.info("Task completed - notification queued")
+        logger.info("Task completed successfully - notification queued")
         
     except Exception as e:
         logger.error(f"Error in task execution: {e}")
@@ -69,7 +64,7 @@ class TaskScheduler:
     def __init__(self):
         self.running = False
         self.thread = None
-        self.task_count = 0  # Add this line - it was missing!
+        self.task_count = 0
         logger.info("TaskScheduler initialized")
         
     def setup_schedules(self):
@@ -77,13 +72,17 @@ class TaskScheduler:
         logger.info("Setting up scheduled tasks...")
         
         try:
-            # For testing, run every 2 minutes instead of longer intervals
-            schedule.every(2).minutes.do(self._wrapped_task, "Every 2 minutes")
-            logger.info("Scheduled: Task every 2 minutes")
+            # Run every day at 10:30 AM
+            schedule.every().day.at("10:30").do(self._wrapped_task, "Daily 10:30")
+            logger.info("Scheduled: Daily task at 10:30 AM")
             
-            # Uncomment these once testing is complete:
-            # schedule.every().day.at("10:30").do(self._wrapped_task, "Daily 10:30")
-            # schedule.every().hour.do(self._wrapped_task, "Hourly")
+            # Run every hour
+            schedule.every().hour.do(self._wrapped_task, "Hourly")
+            logger.info("Scheduled: Hourly task")
+            
+            # Run every 5 minutes
+            schedule.every(5).minutes.do(self._wrapped_task, "Every 5 minutes")
+            logger.info("Scheduled: Task every 5 minutes")
             
             logger.info("All schedules configured successfully")
             logger.info(f"Total scheduled jobs: {len(schedule.jobs)}")
@@ -107,27 +106,18 @@ class TaskScheduler:
             
             logger.info("Entering scheduler loop - waiting for tasks...")
             iteration = 0
-            
             while self.running:
                 iteration += 1
                 
-                # Log every 30 iterations (roughly every 30 seconds) to show it's alive
-                if iteration % 30 == 0:
-                    logger.info(f"Scheduler alive - {len(schedule.jobs)} jobs, {self.task_count} tasks executed")
-                    if schedule.jobs:
-                        # Collect only non-None next_run values to satisfy type checkers and avoid errors
-                        next_runs = [job.next_run for job in schedule.jobs if job.next_run is not None]
-                        if next_runs:
-                            next_run = min(next_runs)
-                            logger.info(f"Next run at: {next_run}")
-                        else:
-                            logger.info("Next run at: None (no scheduled next_run times)")
+                # Log every 60 iterations (roughly every minute) to show scheduler is alive
+                if iteration % 60 == 0:
+                    logger.info(f"Scheduler alive - {len(schedule.jobs)} jobs scheduled, {self.task_count} tasks executed so far")
+                    logger.info(f"Next run times: {[str(job.next_run) for job in schedule.jobs[:3]]}")
                 
                 schedule.run_pending()
                 time.sleep(1)
             
             logger.info("Scheduler loop ended")
-            
         except Exception as e:
             logger.error(f"Error in scheduler loop: {e}")
             import traceback
