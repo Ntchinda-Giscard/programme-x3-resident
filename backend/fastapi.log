@@ -88,3 +88,16 @@ Service installed
 2025-11-10 11:51:46,475 - INFO - Test log entry 3 - test - <module> - 164 - MainThread
 2025-11-11 10:33:32,895 - INFO - Stopping service: WAZAPOS - __main__ - stop_service - 314 - MainThread
 2025-11-11 10:33:41,867 - INFO - Starting service: WAZAPOS - __main__ - start_service - 277 - MainThread
+2025-11-11 10:46:15,085 - INFO - TaskScheduler initialized - scheduler - __init__ - 37 - MainThread
+2025-11-11 10:46:15,085 - INFO - Starting scheduler thread... - scheduler - start - 70 - MainThread
+2025-11-11 10:46:15,086 - INFO - Scheduler loop starting... - scheduler - run - 59 - Thread-1 (run)
+2025-11-11 10:46:15,087 - INFO - Scheduler thread started - scheduler - start - 74 - MainThread
+2025-11-11 10:46:15,087 - INFO - Setting up scheduled tasks... - scheduler - setup_schedules - 41 - Thread-1 (run)
+2025-11-11 10:46:15,098 - INFO - Scheduled: Daily task at 10:30 AM - scheduler - setup_schedules - 45 - Thread-1 (run)
+2025-11-11 10:46:15,099 - INFO - Scheduled: Hourly task - scheduler - setup_schedules - 49 - Thread-1 (run)
+2025-11-11 10:46:15,101 - INFO - Scheduled: Task every 5 minutes - scheduler - setup_schedules - 53 - Thread-1 (run)
+2025-11-11 10:46:15,102 - INFO - All schedules configured - scheduler - setup_schedules - 55 - Thread-1 (run)
+2025-11-11 10:46:25,295 - INFO - Stopping scheduler... - scheduler - stop - 78 - MainThread
+2025-11-11 10:46:26,121 - INFO - Scheduler loop ended - scheduler - run - 66 - Thread-1 (run)
+2025-11-11 10:46:26,125 - INFO - Scheduler stopped - scheduler - stop - 82 - MainThread
+2025-11-11 11:45:58,981 - INFO - TaskScheduler initialized - scheduler - __init__ - 37 - MainThread

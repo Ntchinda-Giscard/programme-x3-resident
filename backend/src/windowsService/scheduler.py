@@ -68,28 +68,20 @@ class TaskScheduler:
         logger.info("TaskScheduler initialized")
         
     def setup_schedules(self):
-        """Define your scheduled tasks here"""
         logger.info("Setting up scheduled tasks...")
-        
+
         try:
-            # Run every day at 10:30 AM
-            schedule.every().day.at("10:30").do(self._wrapped_task, "Daily 10:30")
-            logger.info("Scheduled: Daily task at 10:30 AM")
-            
-            # Run every hour
-            schedule.every().hour.do(self._wrapped_task, "Hourly")
-            logger.info("Scheduled: Hourly task")
-            
-            # Run every 5 minutes
+            # Run every 5 minutes only
             schedule.every(5).minutes.do(self._wrapped_task, "Every 5 minutes")
             logger.info("Scheduled: Task every 5 minutes")
-            
+
             logger.info("All schedules configured successfully")
             logger.info(f"Total scheduled jobs: {len(schedule.jobs)}")
-            
+
         except Exception as e:
             logger.error(f"Error setting up schedules: {e}")
             raise
+
     
     def _wrapped_task(self, task_name):
         """Wrapper that adds tracking to task execution"""
