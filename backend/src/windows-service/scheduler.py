@@ -115,8 +115,13 @@ class TaskScheduler:
                 if iteration % 30 == 0:
                     logger.info(f"Scheduler alive - {len(schedule.jobs)} jobs, {self.task_count} tasks executed")
                     if schedule.jobs:
-                        next_run = min(job.next_run for job in schedule.jobs)
-                        logger.info(f"Next run at: {next_run}")
+                        # Collect only non-None next_run values to satisfy type checkers and avoid errors
+                        next_runs = [job.next_run for job in schedule.jobs if job.next_run is not None]
+                        if next_runs:
+                            next_run = min(next_runs)
+                            logger.info(f"Next run at: {next_run}")
+                        else:
+                            logger.info("Next run at: None (no scheduled next_run times)")
                 
                 schedule.run_pending()
                 time.sleep(1)
