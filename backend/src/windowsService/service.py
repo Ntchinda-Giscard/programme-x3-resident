@@ -1,4 +1,4 @@
-# backend/src/windows-service/service.py
+# backend/src/windowsService/service.py
 import sys
 import os
 

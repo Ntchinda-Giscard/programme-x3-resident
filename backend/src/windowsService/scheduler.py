@@ -1,4 +1,4 @@
-# windows-service/scheduler.py
+# windowsService/scheduler.py
 import schedule
 import time
 import threading

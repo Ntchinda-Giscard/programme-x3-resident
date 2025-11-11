@@ -64,8 +64,8 @@ def get_service_script_path():
             meipass = getattr(sys, '_MEIPASS', None)
             if meipass:
                 possible_sources = [
-                    os.path.join(meipass, 'src', 'windows-service', 'service.py'),
-                    os.path.join(meipass, 'windows-service', 'service.py'),
+                    os.path.join(meipass, 'src', 'windowsService', 'service.py'),
+                    os.path.join(meipass, 'windowsService', 'service.py'),
                     os.path.join(meipass, 'service.py'),
                 ]
                 
@@ -90,7 +90,7 @@ def get_service_script_path():
         # Running in development mode
         logger.info("Running in development mode")
         backend_dir = os.path.dirname(os.path.abspath(__file__))
-        service_script = os.path.join(backend_dir, 'src', 'windows-service', 'service.py')
+        service_script = os.path.join(backend_dir, 'src', 'windowsService', 'service.py')
     
     logger.info(f"Final service script path: {service_script}")
     logger.info(f"Service script exists: {os.path.exists(service_script)}")

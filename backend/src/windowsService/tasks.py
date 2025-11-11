@@ -1,4 +1,4 @@
-# windows-service/tasks.py
+# windowsService/tasks.py
 import logging
 import sys
 
@@ -14,7 +14,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# backend/src/windows-service/tasks.py
+# backend/src/windowsService/tasks.py
 def your_task_function():
     """Example task function"""
     import logging

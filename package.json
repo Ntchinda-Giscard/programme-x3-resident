@@ -39,8 +39,8 @@
         ]
       },
       {
-        "from": "windows-service",
-        "to": "windows-service",
+        "from": "windowsService",
+        "to": "windowsService",
         "filter": [
           "**/*",
           "!__pycache__"

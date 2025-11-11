@@ -86,3 +86,5 @@ Service installed
 2025-11-10 11:51:46,474 - INFO - Test log entry 1 - test - <module> - 162 - MainThread
 2025-11-10 11:51:46,475 - INFO - Test log entry 2 - test - <module> - 163 - MainThread
 2025-11-10 11:51:46,475 - INFO - Test log entry 3 - test - <module> - 164 - MainThread
+2025-11-11 10:33:32,895 - INFO - Stopping service: WAZAPOS - __main__ - stop_service - 314 - MainThread
+2025-11-11 10:33:41,867 - INFO - Starting service: WAZAPOS - __main__ - start_service - 277 - MainThread
