@@ -1,19 +1,62 @@
 # backend/src/windows-service/service.py
+import sys
+import os
+
+# CRITICAL: Set unbuffered output immediately
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
+sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', buffering=1)
+
+# Emergency logging with explicit flushing
+def emergency_write(msg):
+    """Write to file immediately with forced flush"""
+    try:
+        log_dir = os.path.join(
+            os.getenv('LOCALAPPDATA', os.path.expanduser('~')),
+            'WAZAPOS',
+            'service'
+        )
+        os.makedirs(log_dir, exist_ok=True)
+        
+        emergency_log = os.path.join(log_dir, 'EMERGENCY.log')
+        
+        with open(emergency_log, 'a') as f:
+            from datetime import datetime
+            f.write(f"{datetime.now()} - {msg}\n")
+            f.flush()
+            os.fsync(f.fileno())  # Force OS to write to disk
+    except Exception as e:
+        # Last resort - write to temp
+        try:
+            import tempfile
+            with open(os.path.join(tempfile.gettempdir(), 'wazapos_emergency.log'), 'a') as f:
+                f.write(f"{msg}\n")
+                f.flush()
+        except:
+            pass
+
+emergency_write("=" * 80)
+emergency_write(f"SERVICE PROCESS STARTED")
+emergency_write(f"Python executable: {sys.executable}")
+emergency_write(f"Python version: {sys.version}")
+emergency_write(f"Working directory: {os.getcwd()}")
+emergency_write(f"Script: {__file__}")
+emergency_write(f"sys.path: {sys.path[:3]}")
+emergency_write("=" * 80)
+
 import win32serviceutil
 import win32service
 import win32event
 import servicemanager
 import socket
-import sys
 import time
-import os
 import traceback
 import threading
 import logging
 
-# Set up file logging BEFORE anything else
+emergency_write("Imports successful")
+
 def setup_logging():
-    """Setup logging to file so we can debug service issues"""
+    """Setup logging with forced flushing"""
     log_dir = os.path.join(
         os.getenv('LOCALAPPDATA', os.path.expanduser('~')),
         'WAZAPOS',
@@ -23,20 +66,39 @@ def setup_logging():
     
     log_file = os.path.join(log_dir, 'service_debug.log')
     
+    # Create a custom handler that forces flushing
+    class FlushingFileHandler(logging.FileHandler):
+        def emit(self, record):
+            super().emit(record)
+            self.flush()  # Force flush after every log
+    
     logging.basicConfig(
         level=logging.DEBUG,
-        format='%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s',
+        format='%(asctime)s - %(levelname)s - %(message)s - %(funcName)s - %(lineno)d',
         handlers=[
-            logging.FileHandler(log_file, mode='a'),
-            logging.StreamHandler()
-        ]
+            FlushingFileHandler(log_file, mode='a'),
+            logging.StreamHandler(sys.stdout)
+        ],
+        force=True  # Override any existing config
     )
-    return logging.getLogger(__name__)
+    
+    logger = logging.getLogger(__name__)
+    
+    # Test that logging works
+    logger.info("=" * 80)
+    logger.info("LOGGING INITIALIZED")
+    logger.info(f"Log file: {log_file}")
+    logger.info("=" * 80)
+    
+    # Force all handlers to flush
+    for handler in logger.handlers:
+        handler.flush()
+    
+    return logger
 
+emergency_write("Setting up logging...")
 logger = setup_logging()
-logger.info("=" * 80)
-logger.info("SERVICE STARTING - Log initialized")
-logger.info("=" * 80)
+emergency_write("Logging setup complete")
 
 
 class YourAppService(win32serviceutil.ServiceFramework):
@@ -45,53 +107,60 @@ class YourAppService(win32serviceutil.ServiceFramework):
     _svc_description_ = "Runs scheduled tasks for WAZAPOS App"
 
     def __init__(self, args):
-        self.is_running = True
-
+        emergency_write("__init__ called")
+        logger.info("Initializing YourAppService")
+        
         try:
-            logger.info("Initializing service...")
             win32serviceutil.ServiceFramework.__init__(self, args)
             self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
             socket.setdefaulttimeout(60)
             self.is_alive = True
             self.scheduler = None
             self.scheduler_thread = None
-            logger.info("✓ Service initialized successfully")
+            
+            logger.info("Service initialized successfully")
+            emergency_write("Service initialized")
+            
         except Exception as e:
-            logger.error(f"✗ Error in __init__: {e}")
-            logger.error(traceback.format_exc())
+            error_msg = f"Error in __init__: {e}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            emergency_write(f"ERROR: {error_msg}")
             raise
 
     def SvcStop(self):
+        emergency_write("SvcStop called")
+        logger.info("Stop signal received")
+        
         try:
-            logger.info("Stop signal received")
             self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
             win32event.SetEvent(self.hWaitStop)
             self.is_alive = False
             
             if self.scheduler:
                 logger.info("Stopping scheduler...")
-                try:
-                    self.scheduler.stop()
-                    logger.info("✓ Scheduler stopped")
-                except Exception as e:
-                    logger.error(f"Error stopping scheduler: {e}")
+                self.scheduler.stop()
+                logger.info("Scheduler stopped")
             
             if self.scheduler_thread and self.scheduler_thread.is_alive():
-                logger.info("Waiting for scheduler thread to finish...")
+                logger.info("Waiting for scheduler thread...")
                 self.scheduler_thread.join(timeout=5)
-                logger.info("✓ Scheduler thread finished")
+                logger.info("Scheduler thread finished")
             
-            logger.info("✓ Service stop completed")
+            logger.info("Service stop completed")
+            emergency_write("Service stopped successfully")
+            
         except Exception as e:
-            logger.error(f"✗ Error in SvcStop: {e}")
-            logger.error(traceback.format_exc())
+            error_msg = f"Error in SvcStop: {e}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            emergency_write(f"ERROR: {error_msg}")
 
     def SvcDoRun(self):
+        emergency_write("SvcDoRun called")
+        logger.info("SvcDoRun - service starting")
+        
         try:
-            logger.info("SvcDoRun called - service is starting")
-            
-            # This prevents Windows from timing out (1053 error)
             self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
+            emergency_write("Reported START_PENDING")
             
             servicemanager.LogMsg(
                 servicemanager.EVENTLOG_INFORMATION_TYPE,
@@ -99,21 +168,23 @@ class YourAppService(win32serviceutil.ServiceFramework):
                 (self._svc_name_, '')
             )
             
-            # This must happen before any blocking operations
             self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-            logger.info("✓ Service reported as RUNNING to Windows")
+            logger.info("Service reported as RUNNING")
+            emergency_write("Service RUNNING")
             
-            # Now safely start the scheduler in background
+            # Start scheduler
             self._start_scheduler_background()
             
-            # Keep service alive and responsive to Windows
+            # Main loop
             self._main_loop()
             
-            logger.info("Main loop completed, service ending")
+            logger.info("Service ending normally")
+            emergency_write("Service ending")
             
         except Exception as e:
-            logger.error(f"✗ FATAL ERROR in SvcDoRun: {e}")
-            logger.error(traceback.format_exc())
+            error_msg = f"FATAL ERROR in SvcDoRun: {e}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            emergency_write(f"FATAL: {error_msg}")
             
             try:
                 servicemanager.LogErrorMsg(f"Service failed: {e}")
@@ -123,9 +194,10 @@ class YourAppService(win32serviceutil.ServiceFramework):
             self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
     def _start_scheduler_background(self):
-        """Run scheduler in a separate thread - non-blocking"""
+        """Start scheduler in background thread"""
         try:
-            logger.info("Starting scheduler initialization thread...")
+            logger.info("Starting scheduler thread...")
+            emergency_write("Starting scheduler thread")
             
             self.scheduler_thread = threading.Thread(
                 target=self._initialize_scheduler_thread,
@@ -133,102 +205,108 @@ class YourAppService(win32serviceutil.ServiceFramework):
                 name="SchedulerThread"
             )
             self.scheduler_thread.start()
-            logger.info("✓ Scheduler thread spawned")
+            
+            logger.info("Scheduler thread spawned")
+            emergency_write("Scheduler thread spawned")
             
         except Exception as e:
-            logger.error(f"✗ Failed to spawn scheduler thread: {e}")
-            logger.error(traceback.format_exc())
-            try:
-                servicemanager.LogErrorMsg(f"Failed to start scheduler: {e}")
-            except:
-                pass
+            error_msg = f"Failed to spawn scheduler: {e}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            emergency_write(f"ERROR: {error_msg}")
 
     def _initialize_scheduler_thread(self):
-        """Initialize scheduler on separate thread - allows main thread to respond to Windows"""
+        """Initialize scheduler on separate thread"""
+        emergency_write("Scheduler thread started")
+        logger.info("Scheduler thread: initializing...")
+        
         try:
-            logger.info("Scheduler thread: Starting initialization...")
+            # Import scheduler module
+            logger.info("Scheduler thread: importing TaskScheduler...")
             
-            # This prevents import delays from blocking service startup
             try:
                 from scheduler import TaskScheduler
-                logger.info("✓ Scheduler thread: Successfully imported TaskScheduler")
+                logger.info("TaskScheduler imported successfully")
+                emergency_write("TaskScheduler imported")
+                
             except ImportError as e:
-                logger.error(f"✗ Scheduler thread: Failed to import scheduler: {e}")
-                logger.error(traceback.format_exc())
-                try:
-                    servicemanager.LogErrorMsg(f"Failed to import scheduler: {e}")
-                except:
-                    pass
-                return
-            except Exception as e:
-                logger.error(f"✗ Scheduler thread: Unexpected error importing scheduler: {e}")
-                logger.error(traceback.format_exc())
-                try:
-                    servicemanager.LogErrorMsg(f"Unexpected error importing scheduler: {e}")
-                except:
-                    pass
+                error_msg = f"Failed to import scheduler: {e}\n{traceback.format_exc()}"
+                logger.error(error_msg)
+                emergency_write(f"IMPORT ERROR: {error_msg}")
                 return
             
-            # Now instantiate and start the scheduler
+            # Create and start scheduler
             try:
+                logger.info("Creating TaskScheduler instance...")
                 self.scheduler = TaskScheduler()
-                logger.info("✓ Scheduler thread: TaskScheduler instance created")
+                logger.info("TaskScheduler created")
+                emergency_write("TaskScheduler created")
                 
+                logger.info("Starting TaskScheduler...")
                 self.scheduler.start()
-                logger.info("✓ Scheduler thread: TaskScheduler started successfully")
+                logger.info("TaskScheduler started successfully")
+                emergency_write("TaskScheduler started successfully")
                 
-                try:
-                    servicemanager.LogInfoMsg("TaskScheduler started successfully")
-                except:
-                    pass
-                    
+                servicemanager.LogInfoMsg("TaskScheduler is running")
+                
             except Exception as e:
-                logger.error(f"✗ Scheduler thread: Failed to instantiate/start scheduler: {e}")
-                logger.error(traceback.format_exc())
-                try:
-                    servicemanager.LogErrorMsg(f"Failed to start scheduler: {e}")
-                except:
-                    pass
+                error_msg = f"Failed to start scheduler: {e}\n{traceback.format_exc()}"
+                logger.error(error_msg)
+                emergency_write(f"START ERROR: {error_msg}")
                 
         except Exception as e:
-            logger.error(f"✗ FATAL ERROR in scheduler thread: {e}")
-            logger.error(traceback.format_exc())
+            error_msg = f"FATAL in scheduler thread: {e}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            emergency_write(f"FATAL: {error_msg}")
 
     def _main_loop(self):
-        """Main service loop - keeps service responsive to Windows"""
+        """Main service loop"""
+        emergency_write("Entering main loop")
+        logger.info("Entering main service loop")
+        
         try:
-            logger.info("Entering main service loop...")
-            
+            iteration = 0
             while self.is_alive:
-                # WaitForSingleObject with timeout keeps service responsive
+                iteration += 1
+                
+                # Log heartbeat every 60 iterations (~5 minutes)
+                if iteration % 60 == 0:
+                    logger.info(f"Service heartbeat - iteration {iteration}")
+                    emergency_write(f"Heartbeat {iteration}")
+                
                 rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
                 if rc == win32event.WAIT_OBJECT_0:
                     logger.info("Stop event received")
+                    emergency_write("Stop event received")
                     break
             
-            logger.info("Exiting main service loop")
+            logger.info("Exiting main loop")
+            emergency_write("Main loop exited")
             
         except Exception as e:
-            logger.error(f"✗ FATAL ERROR in main loop: {e}")
-            logger.error(traceback.format_exc())
+            error_msg = f"ERROR in main loop: {e}\n{traceback.format_exc()}"
+            logger.error(error_msg)
+            emergency_write(f"LOOP ERROR: {error_msg}")
             raise
 
 
 if __name__ == '__main__':
+    emergency_write("__main__ executing")
+    logger.info(f"Script started with args: {sys.argv}")
+    
     try:
-        logger.info("Service script executed")
-        logger.info(f"Arguments: {sys.argv}")
-        
         if len(sys.argv) == 1:
-            logger.info("Running as service...")
+            emergency_write("Running as service")
+            logger.info("Running as Windows service")
             servicemanager.Initialize()
             servicemanager.PrepareToHostSingle(YourAppService)
             servicemanager.StartServiceCtrlDispatcher()
         else:
-            logger.info("Running command line handler...")
+            emergency_write(f"Command line: {sys.argv}")
+            logger.info("Running command line handler")
             win32serviceutil.HandleCommandLine(YourAppService)
             
     except Exception as e:
-        logger.error(f"✗ FATAL ERROR in __main__: {e}")
-        logger.error(traceback.format_exc())
-        raise e
+        error_msg = f"FATAL in __main__: {e}\n{traceback.format_exc()}"
+        logger.error(error_msg)
+        emergency_write(f"FATAL MAIN: {error_msg}")
+        raise

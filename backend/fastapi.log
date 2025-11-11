@@ -80,3 +80,9 @@ Service installed
 2025-10-29 10:20:55,014 - INFO - STDERR:  - service_manager - install_service - 203 - MainThread
 2025-10-29 10:20:55,016 - INFO - Returning success: Service installed successfully - service_manager - install_service - 207 - MainThread
 2025-10-29 10:20:55,017 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 32 - MainThread
+2025-11-10 11:42:42,905 - INFO - TaskScheduler initialized - scheduler - __init__ - 37 - MainThread
+2025-11-10 11:47:47,296 - INFO - TaskScheduler initialized - scheduler - __init__ - 37 - MainThread
+2025-11-10 11:51:45,829 - INFO - TaskScheduler initialized - scheduler - __init__ - 37 - MainThread
+2025-11-10 11:51:46,474 - INFO - Test log entry 1 - test - <module> - 162 - MainThread
+2025-11-10 11:51:46,475 - INFO - Test log entry 2 - test - <module> - 163 - MainThread
+2025-11-10 11:51:46,475 - INFO - Test log entry 3 - test - <module> - 164 - MainThread
