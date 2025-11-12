@@ -479,13 +479,14 @@ class PythonService(win32serviceutil.ServiceFramework):
             "UID=superadmin;"
             "PWD=MotDePasseFort123!;"
         )
-        sqlserver_cursor = sqlserver_conn.cursor()
-
-        db_folder = r"C:\my-folder-i-created\sagex3-db"
+        db_folder = r"C://wazapos-backups//"
         db_path = os.path.join(db_folder, "sagex3_seed.db")
+        sqlserver_cursor = sqlserver_conn.cursor()
+        sqlite_conn = sqlite3.connect(db_path, timeout=30, check_same_thread=False)
+        sqlite_cursor = sqlite_conn.cursor()
+        
 
-        # Create the folder if it doesn't exist
-        os.makedirs(db_folder, exist_ok=True)
+        
 
         while self.running:
             # 👉 Put your custom Python code here
