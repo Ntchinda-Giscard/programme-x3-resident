@@ -10,8 +10,8 @@ import sys
 import shutil
 
 
-SERVICE_NAME = "WAZAPOS"
-SERVICE_DISPLAY_NAME = "WAZAPOS App Background Service"
+SERVICE_NAME = "WAZAPOS_TEST"
+SERVICE_DISPLAY_NAME = "WAZAPOS_TEST"
 SERVICE_DESCRIPTION = "Runs scheduled tasks for WAZAPOS App"
 
 logging.basicConfig(
