@@ -435,6 +435,7 @@ import pyodbc
 import sqlite3
 from decimal import Decimal
 import logging
+import os
 
 
 # LOG_FILE = "C:\\WAZAPOS_service_log.log"
@@ -479,6 +480,12 @@ class PythonService(win32serviceutil.ServiceFramework):
             "PWD=MotDePasseFort123!;"
         )
         sqlserver_cursor = sqlserver_conn.cursor()
+
+        db_folder = r"C:\my-folder-i-created\sagex3-db"
+        db_path = os.path.join(db_folder, "sagex3_seed.db")
+
+        # Create the folder if it doesn't exist
+        os.makedirs(db_folder, exist_ok=True)
 
         while self.running:
             # 👉 Put your custom Python code here
