@@ -431,20 +431,25 @@ import win32event
 import servicemanager
 import time
 from datetime import datetime
+import pyodbc
+import sqlite3
+from decimal import Decimal
+import logging
 
-LOG_FILE = "C:\\WAZAPOS_service_log.log"
 
-def log_message(message):
-    """Helper: log message with timestamp to file and Event Viewer"""
-    timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
-    line = f"{timestamp} {message}\n"
+# LOG_FILE = "C:\\WAZAPOS_service_log.log"
 
-    # Append to file
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(line)
+# def log_message(message):
+#     """Helper: log message with timestamp to file and Event Viewer"""
+#     timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+#     line = f"{timestamp} {message}\n"
 
-    # Send to Event Viewer
-    servicemanager.LogInfoMsg(line)
+#     # Append to file
+#     with open(LOG_FILE, "a", encoding="utf-8") as f:
+#         f.write(line)
+
+#     # Send to Event Viewer
+#     servicemanager.LogInfoMsg(line)
 
 
 class PythonService(win32serviceutil.ServiceFramework):
@@ -463,31 +468,39 @@ class PythonService(win32serviceutil.ServiceFramework):
         win32event.SetEvent(self.stop_event)
         self.running = False
 
-    # def SvcDoRun(self):
-    #     """Main service loop."""
-    #     servicemanager.LogInfoMsg("MyPythonService - Starting service...")
-
-    #     while self.running:
-    #         # 👉 Put your custom Python code here
-    #         with open("C:\\service_log.txt", "a") as f:
-    #             f.write("Service running...\n")
-
-    #         time.sleep(10)  # Wait 10 seconds before next loop
-
-    #     servicemanager.LogInfoMsg("MyPythonService - Service stopped.")
-
     def SvcDoRun(self):
-        """Main entry point for service logic"""
-        log_message("Service started successfully.")
-        self.main_loop()
-    
-    def main_loop(self):
-        """Main loop that runs periodically"""
-        while self.running:
-            log_message("Heartbeat: Service is running.")
-            time.sleep(300)  # Log every 5 minutes
+        """Main service loop."""
+        servicemanager.LogInfoMsg("MyPythonService - Starting service...")
+        sqlserver_conn = pyodbc.connect(
+            "DRIVER={ODBC Driver 17 for SQL Server};"
+            "SERVER=192.168.2.41,1433;"
+            "DATABASE=x3waza;"
+            "UID=superadmin;"
+            "PWD=MotDePasseFort123!;"
+        )
+        sqlserver_cursor = sqlserver_conn.cursor()
 
-        log_message("Service stopped.")
+        while self.running:
+            # 👉 Put your custom Python code here
+            with open("C:\\service_log.txt", "a") as f:
+                f.write("Service running new...\n")
+
+            time.sleep(10)  # Wait 10 seconds before next loop
+
+        servicemanager.LogInfoMsg("MyPythonService - Service stopped.")
+
+    # def SvcDoRun(self):
+    #     """Main entry point for service logic"""
+    #     log_message("Service started successfully.")
+    #     self.main_loop()
+    
+    # def main_loop(self):
+    #     """Main loop that runs periodically"""
+    #     while self.running:
+    #         log_message("Heartbeat: Service is running.")
+    #         time.sleep(300)  # Log every 5 minutes
+
+        # log_message("Service stopped.")
 
 
 if __name__ == '__main__':
