@@ -9,8 +9,6 @@ import os
 import sys
 import shutil
 
-SERVICE_USER = "DIGITAL MARKET"
-SERVICE_PASSWORD = "1478500"
 
 SERVICE_NAME = "WAZAPOS"
 SERVICE_DISPLAY_NAME = "WAZAPOS App Background Service"
