@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.configs.controller import folder_router
 from src.services.controller import service_router
 from src.odbc.controller import odbc_router
+from src.email.controller import email_router
 from src.database.session import engine, Base
 
 
@@ -44,6 +45,7 @@ app.add_middleware(
 app.include_router(folder_router)
 app.include_router(service_router)
 app.include_router(odbc_router)
+app.include_router(email_router)
 
 @app.get("/")
 def read_root():

@@ -1,12 +1,12 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-class EmailSMTPReturn(BaseModel):
+class EmailSMTPReturns(BaseModel):
     message: str
 
 
 
-class  EmailConfig(BaseModel):
+class  EmailConfigAdd(BaseModel):
   smtpServer: str
   smtpPort: int
   senderEmail: str

@@ -101,3 +101,5 @@ Service installed
 2025-11-11 10:46:26,121 - INFO - Scheduler loop ended - scheduler - run - 66 - Thread-1 (run)
 2025-11-11 10:46:26,125 - INFO - Scheduler stopped - scheduler - stop - 82 - MainThread
 2025-11-11 11:45:58,981 - INFO - TaskScheduler initialized - scheduler - __init__ - 37 - MainThread
+2025-11-13 10:47:39,719 - INFO - Creating app.db... - __main__ - <module> - 25 - MainThread
+2025-11-13 10:47:40,786 - INFO - Created app.db - __main__ - <module> - 27 - MainThread

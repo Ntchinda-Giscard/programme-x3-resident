@@ -1,11 +1,13 @@
 # database.py
 
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # 1) Point to your SQLite file (relative to working dir)
-SQLALCHEMY_DATABASE_URL = "sqlite:///./config.db"
+os.makedirs('c:/posdatabase', exist_ok=True)
+SQLALCHEMY_DATABASE_URL = "sqlite:///c:/posdatabase/config.db"
 
 # 2) For SQLite only, we need this argument
 engine = create_engine(
