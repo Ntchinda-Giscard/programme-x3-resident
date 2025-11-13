@@ -480,9 +480,72 @@ class PythonService(win32serviceutil.ServiceFramework):
         while self.running:
             # 👉 Put your custom Python code here
             with open("C:\\service_log.txt", "a") as f:
-                f.write("Service running new...\n")
+                try:
+                    sqlserver_conn = pyodbc.connect(
+                        "DRIVER={ODBC Driver 17 for SQL Server};"
+                        "SERVER=192.168.2.41,1433;"
+                        "DATABASE=x3waza;"
+                        "UID=superadmin;"
+                        "PWD=MotDePasseFort123!;"
+                    )
+                    sqlserver_cursor = sqlserver_conn.cursor()
+                    sqlite_conn = sqlite3.connect("c:/posdatabase/sagex3_seed.db", timeout=30, check_same_thread=False)
+                    sqlite_cursor = sqlite_conn.cursor()
+                    tables = [
+        "ITMMASTER",
+        "ITMSALES",
+        "ITMFACILIT",
+        "BPARTNER",
+        "BPCUSTOMER",
+        "BPCUSTMVT",
+        "BPDLVCUST",
+        "SALESREP",
+        "SPRICLINK",
+        "PRICSTRUCT",
+        "SPREASON",
+        "SPRICCONF",
+        "SPRICLIST",
+        "SORDER",
+        "PIMPL",
+        "TABMODELIV",
+        "STOCK",
+        "FACILITY",
+        "SORDER",
+        "BPCARRIER",
+        "COMPANY",
+        "BPDLVCUST",
+        "TABSOHTYP",
+        "TABVACBPR",
+        "SVCRVAT",
+        "ITMCATEG",
+        "CBLOB",
+        "BLOBEXPENSES",
+        "ABLOB",
+        "AUTILIS",
+        "AMENUSER",
+        "TABVAT",
+        "BPADDRESS",
+        "WAREHOUSE",
+        "TABMODELIV",
+        "TABPAYTERM",
+        "TABDEPAGIO",
+        "BPCINVVAT",
+        "TABVAT",
+        "TABRATVAT",
+        "TABVACITM",
+        "TABVAC",
+        "TAXLINK",
+        "SFOOTINV",
+        "SORDERQ",
+        "SORDERP"
+    ]
 
-            time.sleep(10)  # Wait 10 seconds before next loop
+
+                    f.write("Connected to obdc.\n")
+                except Exception as e:
+                    f.write(f"Error connecting to SQL Server: {e}\n")
+
+            time.sleep(60)  # Wait 60 seconds before next loop
 
         servicemanager.LogInfoMsg("MyPythonService - Service stopped.")
 

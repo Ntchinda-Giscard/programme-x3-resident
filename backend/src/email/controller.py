@@ -11,6 +11,8 @@ email_router = APIRouter(
 
 @email_router.post("/add", response_model=EmailSMTPReturns)
 async def add_email(input: EmailConfigAdd, db=Depends(get_db)):
+    db.query(EmailConfig).delete()
+    db.commit()
     db_email = EmailConfig(
         smtp_server=input.smtpServer,
         user_name=input.senderEmail,
