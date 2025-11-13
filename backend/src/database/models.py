@@ -18,4 +18,16 @@ class DatabaseConfiguration(Base):
     database = Column(String, nullable=True)
     username = Column(String, nullable=True)
     password = Column(String, nullable=True)
+
+class EmailConfig(Base):
+    __tablename__ = "email_configs"
+    id = Column(Integer, primary_key=True, index=True)
+    smtp_server = Column(String, nullable=True)
+    user_name = Column(String, nullable=True)
+    password = Column(String, nullable=True)
+    port = Column(Integer, nullable=True)
+    tls = Column(Boolean, nullable=True)
+    ssl = Column(Boolean, nullable=True)
+    subject = Column(String, nullable=True)
+    message = Column(String, nullable=True)
     
