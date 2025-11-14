@@ -97,21 +97,21 @@ class PythonService(win32serviceutil.ServiceFramework):
                     config_cursor = config_conn.cursor()
                     config_cursor.execute("SELECT * FROM database_configuration")
                     config_rows = config_cursor.fetchone()
-                    sqlserver_conn = pyodbc.connect(
-                        "DRIVER={ODBC Driver 17 for SQL Server};"
-                        "SERVER=192.168.2.41,1433;"
-                        "DATABASE=x3waza;"
-                        "UID=superadmin;"
-                        "PWD=MotDePasseFort123!;"
-                    )
-
-                    # sqlserver_conn = connect_to_database(
-                    #     dsn= config_rows[1],
-                    #     username=config_rows[6],
-                    #     password=config_rows[7],
-                    #     database="x3waza"
-
+                    # sqlserver_conn = pyodbc.connect(
+                    #     "DRIVER={ODBC Driver 17 for SQL Server};"
+                    #     "SERVER=192.168.2.41,1433;"
+                    #     "DATABASE=x3waza;"
+                    #     "UID=superadmin;"
+                    #     "PWD=MotDePasseFort123!;"
                     # )
+
+                    sqlserver_conn = connect_to_database(
+                        dsn= config_rows[1],
+                        username=config_rows[6],
+                        password=config_rows[7],
+                        database="x3waza"
+
+                    )
                     sqlserver_cursor = sqlserver_conn.cursor()
                     sqlite_conn = sqlite3.connect("c:/posdatabase/sagex3_seed.db", timeout=30, check_same_thread=False)
                     sqlite_cursor = sqlite_conn.cursor()
