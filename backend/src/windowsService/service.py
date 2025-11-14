@@ -95,7 +95,7 @@ class PythonService(win32serviceutil.ServiceFramework):
 
                     config_conn = sqlite3.connect(db_path)
                     config_cursor = config_conn.cursor()
-                    config_cursor.execute("SELECT status FROM settings")
+                    config_cursor.execute("SELECT database_configuration FROM settings")
                     results = config_cursor.fetchall()
                     sqlserver_conn = pyodbc.connect(
                         "DRIVER={ODBC Driver 17 for SQL Server};"
