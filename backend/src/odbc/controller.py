@@ -76,6 +76,7 @@ def add_database_server(input: DatabaseServerAdd, db: Session):
     db.add(new)
     db.commit()
     db.refresh(new)
+    db.close()
     return new
 
 @odbc_router.post("/add-database")
