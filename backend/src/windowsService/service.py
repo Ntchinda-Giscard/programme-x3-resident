@@ -1,4 +1,6 @@
-def connect_to_database(dsn, database, tablename, email_field, username=None, password=None):
+
+
+def connect_to_database(dsn, database, username=None, password=None):
     """
     Connects to a SQL Server database using either Windows Authentication or SQL Server Authentication.
 
@@ -22,10 +24,6 @@ def connect_to_database(dsn, database, tablename, email_field, username=None, pa
             connection_str += 'Trusted_Connection=yes;'
         
         conn = pyodbc.connect(connection_str)
-        cursor = conn.cursor()
-        sql = f"SELECT {email_field} FROM {tablename}"
-        cursor.execute(sql)
-        rows = cursor.fetchall()
     
         return conn
 
@@ -96,21 +94,18 @@ class PythonService(win32serviceutil.ServiceFramework):
                     config_cursor = config_conn.cursor()
                     config_cursor.execute("SELECT * FROM database_configuration")
                     config_rows = config_cursor.fetchone()
-                    sqlserver_conn = pyodbc.connect(
-                        "DRIVER={ODBC Driver 17 for SQL Server};"
-                        "SERVER=192.168.2.41,1433;"
-                        "DATABASE=x3waza;"
-                        "UID=superadmin;"
-                        "PWD=MotDePasseFort123!;"
-                    )
-
-                    # sqlserver_conn = connect_to_database(
-                    #     dsn= config_rows[1],
-                    #     username=config_rows[6],
-                    #     password=config_rows[7],
-                    #     database="x3waza"
-
+                    # sqlserver_conn = pyodbc.connect(
+                    #     "DRIVER={ODBC Driver 17 for SQL Server};"
+                    #     "SERVER=192.168.2.41,1433;"
+                    #     "DATABASE=x3waza;"
+                    #     "UID=superadmin;"
+                    #     "PWD=MotDePasseFort123!;"
                     # )
+
+                    sqlserver_conn = connect_to_database(
+                        dsn= config_rows[1], database="x3waza", username=config_rows[6], password=config_rows[7])
+
+                   
                     sqlserver_cursor = sqlserver_conn.cursor()
                     sqlite_conn = sqlite3.connect("c:/posdatabase/sagex3_seed.db", timeout=30, check_same_thread=False)
                     sqlite_cursor = sqlite_conn.cursor()
