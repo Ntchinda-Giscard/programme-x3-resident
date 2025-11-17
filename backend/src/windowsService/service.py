@@ -99,8 +99,9 @@ class PythonService(win32serviceutil.ServiceFramework):
                     folder_conn = sqlite3.connect(db_path)
                     folder_cursor = folder_conn.cursor()
                     folder_cursor.execute("SELECT * FROM configurations_folders")
-                    folder_cursor.fetchone()
+                    folder_rows = folder_cursor.fetchone()
                     folder_conn.close()
+
                     sqlserver_conn = pyodbc.connect(
                         "DRIVER={ODBC Driver 17 for SQL Server};"
                         "SERVER=192.168.2.41,1433;"
@@ -114,7 +115,7 @@ class PythonService(win32serviceutil.ServiceFramework):
 
                    
                     sqlserver_cursor = sqlserver_conn.cursor()
-                    sqlite_conn = sqlite3.connect(f"c:/posdatabase/sagex3_seed.db", timeout=30, check_same_thread=False)
+                    sqlite_conn = sqlite3.connect(f"{folder_rows[1]}/sagex3_seed.db", timeout=30, check_same_thread=False)
                     sqlite_cursor = sqlite_conn.cursor()
                     tables = [
         "ITMMASTER",
