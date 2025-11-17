@@ -94,16 +94,22 @@ class PythonService(win32serviceutil.ServiceFramework):
                     config_cursor = config_conn.cursor()
                     config_cursor.execute("SELECT * FROM database_configuration")
                     config_rows = config_cursor.fetchone()
-                    # sqlserver_conn = pyodbc.connect(
-                    #     "DRIVER={ODBC Driver 17 for SQL Server};"
-                    #     "SERVER=192.168.2.41,1433;"
-                    #     "DATABASE=x3waza;"
-                    #     "UID=superadmin;"
-                    #     "PWD=MotDePasseFort123!;"
-                    # )
+                    config_conn.close()
 
-                    sqlserver_conn = connect_to_database(
-                        dsn= config_rows[1], database="x3waza", username=config_rows[6], password=config_rows[7])
+                    folder_conn = sqlite3.connect(db_path)
+                    folder_cursor = folder_conn.cursor()
+                    folder_cursor.execute("SELECT * FROM database_configuration")
+                    
+                    sqlserver_conn = pyodbc.connect(
+                        "DRIVER={ODBC Driver 17 for SQL Server};"
+                        "SERVER=192.168.2.41,1433;"
+                        "DATABASE=x3waza;"
+                        "UID=superadmin;"
+                        "PWD=MotDePasseFort123!;"
+                    )
+
+                    # sqlserver_conn = connect_to_database(
+                    #     dsn= config_rows[1], database="x3waza", username=config_rows[6], password=config_rows[7])
 
                    
                     sqlserver_cursor = sqlserver_conn.cursor()
