@@ -99,7 +99,8 @@ class PythonService(win32serviceutil.ServiceFramework):
                     folder_conn = sqlite3.connect(db_path)
                     folder_cursor = folder_conn.cursor()
                     folder_cursor.execute("SELECT * FROM configurations_folders")
-
+                    folder_cursor.fetchone()
+                    folder_conn.close()
                     sqlserver_conn = pyodbc.connect(
                         "DRIVER={ODBC Driver 17 for SQL Server};"
                         "SERVER=192.168.2.41,1433;"
