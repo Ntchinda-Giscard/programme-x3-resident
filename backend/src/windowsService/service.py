@@ -1,39 +1,38 @@
-def connect_to_database(dsn, database=None, username=None, password=None):
+def connect_to_database(dsn, database, tablename, email_field, username=None, password=None):
     """
-    Connects to a SQL Server database using:
-    - SQL Server Authentication (if username & password provided)
-    - Windows Authentication (if username/password not provided)
+    Connects to a SQL Server database using either Windows Authentication or SQL Server Authentication.
 
     Parameters:
-        dsn (str): ODBC Data Source Name.
-        database (str, optional): Database to connect to.
-        username (str, optional): SQL username.
-        password (str, optional): SQL password.
+    - dsn (str): The Data Source Name configured in ODBC.
+    - username (str, optional): The SQL Server username (required for SQL Server Authentication).
+    - password (str, optional): The SQL Server password (required for SQL Server Authentication).
+    - database (str, optional): The name of the specific database to connect to.
 
     Returns:
-        pyodbc.Connection: The active database connection.
+    - pyodbc.Connection: A connection object to the database.
     """
     try:
-        # base connection string
-        connection_str = f"DSN={dsn};"
-
+        connection_str = f'DSN={dsn};'
         if database:
-            connection_str += f"DATABASE={database};"
+            connection_str += f'DATABASE={database};'
 
-        # Choose authentication method
         if username and password:
-            connection_str += f"UID={username};PWD={password};"
+            connection_str += f'UID={username};PWD={password};'
         else:
-            connection_str += "Trusted_Connection=yes;"
-
-
-        # Connect
+            connection_str += 'Trusted_Connection=yes;'
+        
         conn = pyodbc.connect(connection_str)
-
+        cursor = conn.cursor()
+        sql = f"SELECT {email_field} FROM {tablename}"
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+    
         return conn
 
     except pyodbc.Error as e:
-        raise Exception(f"Failed to connect to database: {str(e)}")
+        raise Exception(f"Failed to connect to database: {str(e)}")  
+
+
 
 import win32serviceutil
 import win32service
@@ -97,21 +96,21 @@ class PythonService(win32serviceutil.ServiceFramework):
                     config_cursor = config_conn.cursor()
                     config_cursor.execute("SELECT * FROM database_configuration")
                     config_rows = config_cursor.fetchone()
-                    # sqlserver_conn = pyodbc.connect(
-                    #     "DRIVER={ODBC Driver 17 for SQL Server};"
-                    #     "SERVER=192.168.2.41,1433;"
-                    #     "DATABASE=x3waza;"
-                    #     "UID=superadmin;"
-                    #     "PWD=MotDePasseFort123!;"
-                    # )
-
-                    sqlserver_conn = connect_to_database(
-                        dsn= config_rows[1],
-                        username=config_rows[6],
-                        password=config_rows[7],
-                        database="x3waza"
-
+                    sqlserver_conn = pyodbc.connect(
+                        "DRIVER={ODBC Driver 17 for SQL Server};"
+                        "SERVER=192.168.2.41,1433;"
+                        "DATABASE=x3waza;"
+                        "UID=superadmin;"
+                        "PWD=MotDePasseFort123!;"
                     )
+
+                    # sqlserver_conn = connect_to_database(
+                    #     dsn= config_rows[1],
+                    #     username=config_rows[6],
+                    #     password=config_rows[7],
+                    #     database="x3waza"
+
+                    # )
                     sqlserver_cursor = sqlserver_conn.cursor()
                     sqlite_conn = sqlite3.connect("c:/posdatabase/sagex3_seed.db", timeout=30, check_same_thread=False)
                     sqlite_cursor = sqlite_conn.cursor()
