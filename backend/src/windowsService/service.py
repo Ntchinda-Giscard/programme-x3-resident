@@ -1,6 +1,6 @@
 
-import boto3
-from botocore.exceptions import ClientError
+# import boto3
+# from botocore.exceptions import ClientError
 
 import win32serviceutil
 import win32service
@@ -190,7 +190,7 @@ class PythonService(win32serviceutil.ServiceFramework):
     ]
 
                     for table in tables:
-                        print(f" Processing table: SEED.{table}")
+                        # print(f" Processing table: SEED.{table}")
 
                         # --- Get column names ---
                         sqlserver_cursor.execute(f"SELECT TOP 0 * FROM SEED.{table}")
@@ -217,7 +217,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                         sqlite_cursor.executemany(insert_sql, converted_rows)
                         sqlite_conn.commit()
 
-                        print(f" {table}: {len(rows)} rows copied.")
+                        # print(f" {table}: {len(rows)} rows copied.")
 
                     # --- Close connections ---
                     sqlserver_conn.close()
@@ -229,7 +229,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                     # )
 
 
-                    print(" All SEED tables copied successfully!")
+                    # print(" All SEED tables copied successfully!")
 
                     f.write(f"Connected to obdc.\n {config_rows} dsn= {config_rows[1]}, username={config_rows[6]}, password={config_rows[7]}, database=x3waza ")
                 except Exception as e:
