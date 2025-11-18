@@ -1,6 +1,6 @@
 
-# import boto3
-# from botocore.exceptions import ClientError
+import boto3
+from botocore.exceptions import ClientError
 
 import win32serviceutil
 import win32service
