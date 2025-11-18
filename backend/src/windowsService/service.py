@@ -31,6 +31,39 @@ def connect_to_database(dsn, database, username=None, password=None):
         raise Exception(f"Failed to connect to database: {str(e)}")  
 
 
+import boto3
+from botocore.exceptions import ClientError
+
+def upload_to_versioned_s3(bucket_name, object_key, file_path,
+                           aws_region="us-east-1",
+                           aws_access_key_id="AKIAR2BMOVON3NQAL2UV",
+                           aws_secret_access_key="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"):
+
+
+    s3_client = boto3.client(
+        "s3",
+        region_name=aws_region,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key
+    )
+
+    try:
+        response = s3_client.put_object(
+            Bucket=bucket_name,
+            Key=object_key,
+            Body=open(file_path, "rb")
+        )
+
+        return {
+            "ETag": response.get("ETag"),
+            "VersionId": response.get("VersionId")
+        }
+
+    except ClientError as e:
+        print(f"Error uploading file: {e}")
+        return None
+
+
 
 import win32serviceutil
 import win32service
@@ -44,20 +77,6 @@ from decimal import Decimal
 import logging
 import os
 
-
-# LOG_FILE = "C:\\WAZAPOS_service_log.log"
-
-# def log_message(message):
-#     """Helper: log message with timestamp to file and Event Viewer"""
-#     timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
-#     line = f"{timestamp} {message}\n"
-
-#     # Append to file
-#     with open(LOG_FILE, "a", encoding="utf-8") as f:
-#         f.write(line)
-
-#     # Send to Event Viewer
-#     servicemanager.LogInfoMsg(line)
 
 
 class PythonService(win32serviceutil.ServiceFramework):
