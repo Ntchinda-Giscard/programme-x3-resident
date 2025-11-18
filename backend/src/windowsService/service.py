@@ -1,4 +1,18 @@
 
+import boto3
+from botocore.exceptions import ClientError
+
+import win32serviceutil
+import win32service
+import win32event
+import servicemanager
+import time
+from datetime import datetime
+import pyodbc
+import sqlite3
+from decimal import Decimal
+import logging
+import os
 
 def connect_to_database(dsn, database, username=None, password=None):
     """
@@ -31,51 +45,39 @@ def connect_to_database(dsn, database, username=None, password=None):
         raise Exception(f"Failed to connect to database: {str(e)}")  
 
 
-import boto3
-from botocore.exceptions import ClientError
-
-def upload_to_versioned_s3(bucket_name, object_key, file_path,
-                           aws_region="us-east-1",
-                           aws_access_key_id="AKIAR2BMOVON3NQAL2UV",
-                           aws_secret_access_key="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"):
 
 
-    s3_client = boto3.client(
-        "s3",
-        region_name=aws_region,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key
-    )
-
-    try:
-        response = s3_client.put_object(
-            Bucket=bucket_name,
-            Key=object_key,
-            Body=open(file_path, "rb")
-        )
-
-        return {
-            "ETag": response.get("ETag"),
-            "VersionId": response.get("VersionId")
-        }
-
-    except ClientError as e:
-        print(f"Error uploading file: {e}")
-        return None
+# def upload_to_versioned_s3(bucket_name, object_key, file_path,
+#                            aws_region="us-east-1",
+#                            aws_access_key_id="AKIAR2BMOVON3NQAL2UV",
+#                            aws_secret_access_key="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"):
 
 
+#     s3_client = boto3.client(
+#         "s3",
+#         region_name=aws_region,
+#         aws_access_key_id=aws_access_key_id,
+#         aws_secret_access_key=aws_secret_access_key
+#     )
 
-import win32serviceutil
-import win32service
-import win32event
-import servicemanager
-import time
-from datetime import datetime
-import pyodbc
-import sqlite3
-from decimal import Decimal
-import logging
-import os
+#     try:
+#         response = s3_client.put_object(
+#             Bucket=bucket_name,
+#             Key=object_key,
+#             Body=open(file_path, "rb")
+#         )
+
+#         return {
+#             "ETag": response.get("ETag"),
+#             "VersionId": response.get("VersionId")
+#         }
+
+#     except ClientError as e:
+#         print(f"Error uploading file: {e}")
+#         return None
+
+
+
 
 
 
@@ -220,11 +222,13 @@ class PythonService(win32serviceutil.ServiceFramework):
                     # --- Close connections ---
                     sqlserver_conn.close()
                     sqlite_conn.close()
-                    upload_to_versioned_s3(
-                        "pos-waza",
-                        "uploads/sagex3_seed.db",
-                        f"{folder_rows[1]}/sagex3_seed.db",
-                    )
+                    # upload_to_versioned_s3(
+                    #     "pos-waza",
+                    #     "uploads/sagex3_seed.db",
+                    #     f"{folder_rows[1]}/sagex3_seed.db",
+                    # )
+
+
                     print(" All SEED tables copied successfully!")
 
                     f.write(f"Connected to obdc.\n {config_rows} dsn= {config_rows[1]}, username={config_rows[6]}, password={config_rows[7]}, database=x3waza ")
