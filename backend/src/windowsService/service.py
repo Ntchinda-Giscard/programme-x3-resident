@@ -136,6 +136,8 @@ class PythonService(win32serviceutil.ServiceFramework):
                     sqlserver_cursor = sqlserver_conn.cursor()
                     sqlite_conn = sqlite3.connect(f"{folder_rows[1]}/sagex3_seed.db", timeout=30, check_same_thread=False)
                     sqlite_cursor = sqlite_conn.cursor()
+                    
+                    
                     tables = [
         "ITMMASTER",
         "ITMSALES",
