@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from .model import FolderSettings
 from sqlalchemy.orm import Session
 from ..database.session import get_db
+from ..database.models import ConfigurationsFolders
 from .service import save_folder_settings_service
 
 folder_router = APIRouter(
@@ -17,4 +18,8 @@ def save_folder_settings(folder_settings: FolderSettings, db: Session = Depends(
 
 @folder_router.get("/get", response_model=FolderSettings)
 def get_folder_settings(db: Session = Depends(get_db)):
-    return db.query(FolderSettings).first()
+    response = db.query(ConfigurationsFolders).first()
+    return FolderSettings(
+        source=response.source, # type: ignore
+        destination=response.destination # type: ignore
+    )

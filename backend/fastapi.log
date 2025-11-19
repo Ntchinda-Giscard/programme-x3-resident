@@ -153,3 +153,35 @@ Service installed
 2025-11-19 13:19:56,894 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
 2025-11-19 13:21:51,787 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
 2025-11-19 13:21:51,789 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 13:58:22,324 - INFO - === CONTROLLER: Starting install request === - src.services.controller - install_service - 29 - MainThread
+2025-11-19 13:58:22,332 - INFO - Current service status: {'installed': False, 'status': 'not_installed', 'status_code': None} - service_manager - install_service - 160 - MainThread
+2025-11-19 13:58:22,335 - INFO - Running in development mode - service_manager - get_service_script_path - 89 - MainThread
+2025-11-19 13:58:22,336 - INFO - Final service script path: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windowsService\service.py - service_manager - get_service_script_path - 93 - MainThread
+2025-11-19 13:58:22,338 - INFO - Service script exists: True - service_manager - get_service_script_path - 94 - MainThread
+2025-11-19 13:58:22,340 - INFO - Using Python: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\.venv\Scripts\python.exe - service_manager - install_service - 171 - MainThread
+2025-11-19 13:58:22,341 - INFO - Service script: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windowsService\service.py - service_manager - install_service - 172 - MainThread
+2025-11-19 13:58:22,342 - INFO - Running install command: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\.venv\Scripts\python.exe C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windowsService\service.py --startup=auto install - service_manager - install_service - 183 - MainThread
+2025-11-19 13:58:22,348 - INFO - Working directory: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windowsService - service_manager - install_service - 184 - MainThread
+2025-11-19 13:58:22,350 - INFO - About to execute subprocess.run... - service_manager - install_service - 188 - MainThread
+2025-11-19 13:58:24,216 - INFO - Subprocess completed - service_manager - install_service - 197 - MainThread
+2025-11-19 13:58:24,217 - INFO - Return code: 0 - service_manager - install_service - 198 - MainThread
+2025-11-19 13:58:24,218 - INFO - STDOUT: Installing service WAZAPOS_TEST
+moving host exe 'C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\.venv\Lib\site-packages\win32\pythonservice.exe' -> 'C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\.venv\pythonservice.exe'
+Error installing service: Accès refusé. (5)
+ - service_manager - install_service - 199 - MainThread
+2025-11-19 13:58:24,220 - INFO - STDERR:  - service_manager - install_service - 200 - MainThread
+2025-11-19 13:58:24,221 - INFO - Returning success: Service installed successfully - service_manager - install_service - 204 - MainThread
+2025-11-19 13:58:24,222 - INFO - === CONTROLLER: Service manager returned: Service installed successfully === - src.services.controller - install_service - 31 - MainThread
+2025-11-19 13:58:24,224 - INFO - === CONTROLLER: Returning success response === - src.services.controller - install_service - 41 - MainThread
+2025-11-19 13:58:46,687 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:58:46,700 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 14:00:10,886 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 14:00:10,893 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 14:04:38,311 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 14:04:38,324 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 14:04:45,220 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 14:04:45,223 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 14:04:48,981 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 14:04:48,982 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 14:23:21,910 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-11-19 14:23:21,914 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
