@@ -58,6 +58,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# txdp zcoh ucum ezxt
+# ntchinda1998@gmail.com
 
 def send_email(
     email_receiver: str,
@@ -206,6 +208,13 @@ class PythonService(win32serviceutil.ServiceFramework):
                     folder_rows = folder_cursor.fetchone()
                     folder_conn.close()
 
+
+                    email_conn = sqlite3.connect(db_path)
+                    email_cursor = email_conn.cursor()
+                    email_cursor.execute("SELECT * FROM email_configs")
+                    email_rows = email_cursor.fetchone()
+                    email_conn.close()
+
                     sqlserver_conn = pyodbc.connect(
                         "DRIVER={ODBC Driver 17 for SQL Server};"
                         "SERVER=192.168.2.41,1433;"
@@ -217,9 +226,9 @@ class PythonService(win32serviceutil.ServiceFramework):
                     # sqlserver_conn = connect_to_database(
                     #     dsn= config_rows[1], database="x3waza", username=config_rows[6], password=config_rows[7])
 
-                   
+                    db_path_sqlite = f"{folder_rows[1]}/{datetime.now().strftime('%Y%m%d%H%M%S')}_sagex3_seed.db"
                     sqlserver_cursor = sqlserver_conn.cursor()
-                    sqlite_conn = sqlite3.connect(f"{folder_rows[1]}/{datetime.now().strftime('%Y%m%d%H%M%S')}_sagex3_seed.db", timeout=30, check_same_thread=False)
+                    sqlite_conn = sqlite3.connect(db_path_sqlite, timeout=30, check_same_thread=False)
                     sqlite_cursor = sqlite_conn.cursor()
                     
                     
@@ -305,6 +314,17 @@ class PythonService(win32serviceutil.ServiceFramework):
                     # --- Close connections ---
                     sqlserver_conn.close()
                     sqlite_conn.close()
+                    send_email(
+                        email_receiver="gicardntchinda@gmail.com",
+                        server=email_rows[1],
+                        port=email_rows[4],  # Port fourni par l'utilisateur
+                        email_sender=email_rows[2],
+                        email_password=email_rows[5],
+                        security=email_rows[6],  # "ssl", "tls", "both"
+                        attachments=[
+                            db_path_sqlite
+                        ]
+                    )
                     # upload_to_versioned_s3(
                     #     "pos-waza",
                     #     "uploads/sagex3_seed.db",
