@@ -79,6 +79,12 @@ def add_database_server(input: DatabaseServerAdd, db: Session):
     db.close()
     return new
 
+@odbc_router.get("/get-database")
+async def get_database(db: Session = Depends(get_db)):
+    result = db.query(DatabaseConfiguration).first()
+    db.close()
+    return {"server": result}
+
 @odbc_router.post("/add-database")
 async def add_database(input: DatabaseServerAdd, db: Session = Depends(get_db)):
     result = add_database_server(input, db)
