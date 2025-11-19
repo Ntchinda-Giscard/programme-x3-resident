@@ -13,3 +13,8 @@ folder_router = APIRouter(
 @folder_router.post("/add", response_model=FolderSettings)
 def save_folder_settings(folder_settings: FolderSettings, db: Session = Depends(get_db)):
     return save_folder_settings_service(folder_settings, db)
+
+
+@folder_router.get("/get", response_model=FolderSettings)
+def get_folder_settings(db: Session = Depends(get_db)):
+    return db.query(FolderSettings).first()

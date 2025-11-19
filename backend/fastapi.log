@@ -109,3 +109,5 @@ Service installed
 2025-11-13 11:36:58,838 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
 2025-11-13 11:37:02,206 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
 2025-11-13 11:37:02,208 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 11:46:21,522 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-11-19 11:46:21,636 - INFO - Created app.db - __main__ - <module> - 28 - MainThread

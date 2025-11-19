@@ -1,7 +1,6 @@
 
 # import boto3
 # from botocore.exceptions import ClientError
-
 import win32serviceutil
 import win32service
 import win32event
@@ -136,7 +135,7 @@ class PythonService(win32serviceutil.ServiceFramework):
 
                    
                     sqlserver_cursor = sqlserver_conn.cursor()
-                    sqlite_conn = sqlite3.connect(f"{folder_rows[1]}/sagex3_seed.db", timeout=30, check_same_thread=False)
+                    sqlite_conn = sqlite3.connect(f"{folder_rows[1]}/{datetime.now().strftime('%Y%m%d%H%M%S')}_sagex3_seed.db", timeout=30, check_same_thread=False)
                     sqlite_cursor = sqlite_conn.cursor()
                     
                     
