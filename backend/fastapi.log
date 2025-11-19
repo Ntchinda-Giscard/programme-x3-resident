@@ -137,3 +137,17 @@ Service installed
 2025-11-19 13:05:54,774 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
 2025-11-19 13:11:00,497 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
 2025-11-19 13:11:00,503 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-11-19 13:13:08,316 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:13:08,319 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 13:13:10,332 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 13:13:10,333 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 13:14:40,467 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:14:40,472 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 13:14:42,878 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 13:14:42,880 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 13:17:46,699 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:17:46,719 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 13:17:49,422 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 13:17:49,425 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 13:19:56,891 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:19:56,894 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
