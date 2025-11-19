@@ -314,6 +314,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                     # --- Close connections ---
                     sqlserver_conn.close()
                     sqlite_conn.close()
+                    security = "ssl"
                     if email_rows[6] is True:
                         security = "ssl"
                     elif email_rows[5] is True:
@@ -332,14 +333,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                             db_path_sqlite
                         ]
                     )
-                    # upload_to_versioned_s3(
-                    #     "pos-waza",
-                    #     "uploads/sagex3_seed.db",
-                    #     f"{folder_rows[1]}/sagex3_seed.db",
-                    # )
-
-
-                    # print(" All SEED tables copied successfully!")
+                    
 
                     f.write(f"Connected to obdc.\n {config_rows} dsn= {config_rows[1]}, username={config_rows[6]}, password={config_rows[7]}, database=x3waza ")
                 except Exception as e:
