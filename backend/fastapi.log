@@ -111,3 +111,27 @@ Service installed
 2025-11-13 11:37:02,208 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
 2025-11-19 11:46:21,522 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
 2025-11-19 11:46:21,636 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-11-19 12:22:59,099 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:22:59,152 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:28:43,964 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:28:43,968 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:28:46,122 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 12:28:46,128 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 12:39:42,691 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:39:42,693 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:44:07,555 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:44:07,558 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:44:11,737 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 12:44:11,738 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 12:51:04,521 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:51:04,550 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:51:22,734 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:51:22,737 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:59:07,263 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:59:07,267 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:59:30,232 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:59:30,255 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:59:30,928 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 12:59:30,932 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 13:05:54,772 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:05:54,774 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
