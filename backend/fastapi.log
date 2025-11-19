@@ -189,3 +189,13 @@ Error installing service: Accès refusé. (5)
 2025-11-19 14:24:48,639 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
 2025-11-19 14:27:24,539 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
 2025-11-19 14:27:24,541 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 15:01:52,879 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 15:01:52,882 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 15:02:26,009 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 15:02:26,011 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 15:03:05,552 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 15:03:05,553 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 15:03:15,920 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 15:03:15,956 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 15:03:17,922 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 15:03:17,923 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
