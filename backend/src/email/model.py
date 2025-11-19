@@ -3,6 +3,12 @@ from typing import List, Optional
 
 class EmailSMTPReturns(BaseModel):
     message: str
+    smtpServer: str
+    smtpPort: int
+    senderEmail: str
+    senderPassword: str
+    useSSL: bool
+    useTLS: bool
 
 
 

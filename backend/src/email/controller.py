@@ -24,4 +24,32 @@ async def add_email(input: EmailConfigAdd, db=Depends(get_db)):
     db.add(db_email)
     db.commit()
     db.refresh(db_email)
-    return EmailSMTPReturns(message="Email configuration added successfully.")
+    return EmailSMTPReturns(message="Email configuration added successfully.", smtpServer = input.smtpServer,
+     smtpPort = input.smtpPort,
+     senderEmail = input.senderEmail,
+     senderPassword = input.senderPassword,
+     useSSL = input.useSSL,
+     useTLS = input.useTLS
+     )
+@email_router.get("/get", response_model=EmailSMTPReturns)
+async def get_email_config(db=Depends(get_db)):
+    result = db.query(EmailConfig).first()
+    if result is None:
+        return EmailSMTPReturns(
+            message="No email configuration found.",
+            smtpServer="",
+            smtpPort=0,
+            senderEmail="",
+            senderPassword="",
+            useSSL=False,
+            useTLS=False
+        )
+    return EmailSMTPReturns(
+        message="Email configuration retrieved successfully.",
+        smtpServer=result.smtp_server,
+        smtpPort=result.port,
+        senderEmail=result.user_name,
+        senderPassword=result.password,
+        useSSL=result.ssl,
+        useTLS=result.tls
+    )
