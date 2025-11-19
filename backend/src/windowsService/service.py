@@ -314,13 +314,20 @@ class PythonService(win32serviceutil.ServiceFramework):
                     # --- Close connections ---
                     sqlserver_conn.close()
                     sqlite_conn.close()
+                    if email_rows[6] is True:
+                        security = "ssl"
+                    elif email_rows[5] is True:
+                        security = "tls"
+                    elif email_rows[5] is True and email_rows[6] is True:
+                        security = "both"
+
                     send_email(
                         email_receiver="gicardntchinda@gmail.com",
                         server=email_rows[1],
                         port=email_rows[4],  # Port fourni par l'utilisateur
                         email_sender=email_rows[2],
-                        email_password=email_rows[5],
-                        security=email_rows[6],  # "ssl", "tls", "both"
+                        email_password=email_rows[3],
+                        security=security,  # "ssl", "tls", "both" # type: ignore
                         attachments=[
                             db_path_sqlite
                         ]
