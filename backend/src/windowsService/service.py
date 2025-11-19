@@ -46,39 +46,6 @@ def connect_to_database(dsn, database, username=None, password=None):
 
 
 
-# def upload_to_versioned_s3(bucket_name, object_key, file_path,
-#                            aws_region="us-east-1",
-#                            aws_access_key_id="AKIAR2BMOVON3NQAL2UV",
-#                            aws_secret_access_key="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"):
-
-
-#     s3_client = boto3.client(
-#         "s3",
-#         region_name=aws_region,
-#         aws_access_key_id=aws_access_key_id,
-#         aws_secret_access_key=aws_secret_access_key
-#     )
-
-#     try:
-#         response = s3_client.put_object(
-#             Bucket=bucket_name,
-#             Key=object_key,
-#             Body=open(file_path, "rb")
-#         )
-
-#         return {
-#             "ETag": response.get("ETag"),
-#             "VersionId": response.get("VersionId")
-#         }
-
-#     except ClientError as e:
-#         print(f"Error uploading file: {e}")
-#         return None
-
-
-
-
-
 
 class PythonService(win32serviceutil.ServiceFramework):
     _svc_name_ = "WAZAPOS_TEST"              # Service name (unique)
