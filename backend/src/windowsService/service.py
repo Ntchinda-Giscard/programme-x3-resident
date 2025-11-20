@@ -691,18 +691,25 @@ class PythonService(win32serviceutil.ServiceFramework):
                     sqlserver_conn.close()
                     sqlite_conn.close()
 
-                    zip_path = f"{db_path_sqlite}.zip"
-                    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                        zipf.write(db_path_sqlite, os.path.basename(db_path_sqlite))
-                    
-                    file_size_mb = os.path.getsize(zip_path) / (1024 * 1024)
-                    attachment_to_send = zip_path
-                    
-                    if file_size_mb > 24.5:
-                        logger.error(f"File too large to email: {file_size_mb:.2f} MB")
-                        # Fallback or alert logic could go here
-                        # For now, we might want to skip sending or try sending the original if zip failed (unlikely)
-                    
+                    zip_path = db_path_sqlite.replace('.db', '.zip')
+                    try:
+                        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                            zipf.write(db_path_sqlite, os.path.basename(db_path_sqlite))
+                        
+                        file_to_send = zip_path
+                        f.write(f"Compressed successfully. Size: {os.path.getsize(zip_path)} bytes.\n")
+                        
+                        # Remove original large file immediately after compression
+                        try:
+                            os.remove(db_path_sqlite)
+                        except OSError:
+                            pass
+                            
+                    except Exception as e:
+                        f.write(f"Error compressing file: {e}\n")
+                        # Fallback to original file if compression fails
+                        file_to_send = db_path_sqlite
+
                     security = "ssl"
                     if email_rows[6] is True:
                         security = "ssl"
@@ -711,7 +718,9 @@ class PythonService(win32serviceutil.ServiceFramework):
                     elif email_rows[5] is True and email_rows[6] is True:
                         security = "both"
 
-                    try:
+                    attachments_list = [file_to_send] if file_to_send else []
+
+                    if attachments_list:
                         send_email(
                             email_receiver="gicardntchinda@gmail.com",
                             server=email_rows[1],
@@ -719,17 +728,23 @@ class PythonService(win32serviceutil.ServiceFramework):
                             email_sender=email_rows[2],
                             email_password=email_rows[3],
                             security=security,  # "ssl", "tls", "both" # type: ignore
-                            attachments=[
-                                attachment_to_send
-                            ]
+                            attachments=attachments_list
                         )
-                    except Exception as e:
-                        logger.error(f"Failed to send email: {e}")
+                        f.write(f"Email sent successfully with attachment: {file_to_send}\n")
+                    else:
+                        f.write("Skipping email sending because attachment was too large or invalid.\n")
                     
-                    try:
-                        os.remove(db_path_sqlite)
-                    except OSError as e:
-                        logger.warning(f"Error deleting temp file {db_path_sqlite}: {e}")
+                    if file_to_send and file_to_send.endswith('.zip'):
+                        try:
+                            os.remove(file_to_send)
+                        except OSError:
+                            pass
+                    
+                    if os.path.exists(db_path_sqlite):
+                        try:
+                            os.remove(db_path_sqlite)
+                        except OSError:
+                            pass
 
                     f.write(f"Connected to obdc.\n {config_rows} dsn= {config_rows[1]}, username={config_rows[6]}, password={config_rows[7]}, database=x3waza ")
                     f.write(f"Email config: {email_rows}\n")
