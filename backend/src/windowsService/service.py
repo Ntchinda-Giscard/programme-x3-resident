@@ -336,6 +336,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                     
 
                     f.write(f"Connected to obdc.\n {config_rows} dsn= {config_rows[1]}, username={config_rows[6]}, password={config_rows[7]}, database=x3waza ")
+                    f.write(f"Email config: {email_rows}\n")
                 except Exception as e:
                     f.write(f"Error connecting to SQL Server: {e}\n")
 
