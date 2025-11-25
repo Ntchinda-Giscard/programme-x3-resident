@@ -1,8 +1,3 @@
-from email.message import EmailMessage
-import logging
-import mimetypes
-import ssl
-import sys
 import pyodbc
 import sqlite3
 import time
@@ -16,16 +11,15 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 from decimal import Decimal
+import logging
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s',
     handlers=[
-        logging.StreamHandler(sys.stdout),
         logging.FileHandler('fastapi.log')
     ]
 )
-
 logger = logging.getLogger(__name__)
 
 class DatabaseSync:
@@ -87,7 +81,7 @@ class DatabaseSync:
                     f"Trusted_Connection=yes"
                 )
         
-        print(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}")
+        logger.info(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}")
         return pyodbc.connect(conn_str)
 
     def _get_local_connection(self):
@@ -130,10 +124,14 @@ class DatabaseSync:
             """, (table_name, sync_time.isoformat()))
             conn.commit()
 
-    def ensure_local_table_exists(self, table_name: str, columns: List[tuple]):
+    def ensure_local_table_exists(self, table_name: str, columns: List[tuple], pk_column: str):
         """
         Creates the local table if it doesn't exist, matching the source schema.
         Simple mapping: SQL Server types -> SQLite types (TEXT/NUMERIC/BLOB)
+        
+        :param table_name: Name of the table
+        :param columns: List of (column_name, data_type) tuples
+        :param pk_column: The actual primary key column name to use
         """
         seen_columns = set()
         unique_columns = []
@@ -155,9 +153,7 @@ class DatabaseSync:
             
             col_defs.append(f'"{col_name}" {sqlite_type}')
 
-        pk_col = unique_columns[0][0]
-        
-        create_sql = f'CREATE TABLE IF NOT EXISTS "{table_name}" ({", ".join(col_defs)}, PRIMARY KEY ("{pk_col}"))'
+        create_sql = f'CREATE TABLE IF NOT EXISTS "{table_name}" ({", ".join(col_defs)}, PRIMARY KEY ("{pk_column}"))'
         
         with self._get_local_connection() as conn:
             conn.execute(create_sql)
@@ -172,10 +168,10 @@ class DatabaseSync:
         :param schema: Schema name (default: dbo) - IMPORTANT for avoiding duplicate columns
         :return: True if changes were made, False otherwise
         """
-        print(f"[*] Starting sync for table: {schema}.{table_name}")
+        logger.info(f"[*] Starting sync for table: {schema}.{table_name}")
         
         last_sync = self.get_last_sync_time(table_name)
-        print(f"    Last sync time: {last_sync}")
+        logger.info(f"    Last sync time: {last_sync}")
 
         try:
             sql_conn = self._get_sql_connection()
@@ -190,7 +186,7 @@ class DatabaseSync:
             columns = [(row.COLUMN_NAME, row.DATA_TYPE) for row in sql_cursor.fetchall()]
             
             if not columns:
-                print(f"    Warning: No columns found for {schema}.{table_name}, trying without schema filter...")
+                logger.info(f"    Warning: No columns found for {schema}.{table_name}, trying without schema filter...")
                 sql_cursor.execute(f"""
                     SELECT DISTINCT COLUMN_NAME, DATA_TYPE 
                     FROM INFORMATION_SCHEMA.COLUMNS 
@@ -200,10 +196,10 @@ class DatabaseSync:
                 columns = [(row.COLUMN_NAME, row.DATA_TYPE) for row in sql_cursor.fetchall()]
                 
                 if not columns:
-                    print(f"    Error: Table {table_name} not found in SQL Server.")
+                    logger.info(f"    Error: Table {table_name} not found in SQL Server.")
                     return False
 
-            self.ensure_local_table_exists(table_name, columns)
+            self.ensure_local_table_exists(table_name, columns, pk_column)
             
             seen = set()
             unique_col_names = []
@@ -221,11 +217,11 @@ class DatabaseSync:
             rows = sql_cursor.fetchall()
             
             if not rows:
-                print("    No new changes found.")
+                logger.info("    No new changes found.")
                 sql_conn.close()
                 return False
 
-            print(f"    Found {len(rows)} records to update.")
+            logger.info(f"    Found {len(rows)} records to update.")
 
             local_conn = self._get_local_connection()
             local_cursor = local_conn.cursor()
@@ -263,11 +259,11 @@ class DatabaseSync:
                 local_conn.commit()
                 
                 self.update_sync_time(table_name, new_max_date)
-                print(f"    Successfully synced. New watermark: {new_max_date}")
+                logger.info(f"    Successfully synced. New watermark: {new_max_date}")
                 
             except Exception as e:
                 local_conn.rollback()
-                print(f"    Error writing to local DB: {e}")
+                logger.info(f"    Error writing to local DB: {e}")
                 raise
             finally:
                 local_conn.close()
@@ -277,16 +273,16 @@ class DatabaseSync:
             return True
 
         except Exception as e:
-            print(f"    Sync failed: {e}")
+            logger.info(f"    Sync failed: {e}")
             return False
 
     def create_zip(self) -> str:
         """Creates a zip file of the SQLite database and removes any old zip files."""
-        print(f"[*] Creating zip archive of {self.local_db_path}...")
+        logger.info(f"[*] Creating zip archive of {self.local_db_path}...")
         
         for file in Path(self.zip_folder).glob("*.zip"):
             file.unlink()
-            print(f"    Removed old zip: {file}")
+            logger.info(f"    Removed old zip: {file}")
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         zip_filename = f"database_backup_{timestamp}.zip"
@@ -295,112 +291,43 @@ class DatabaseSync:
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             zipf.write(self.local_db_path, arcname=os.path.basename(self.local_db_path))
         
-        print(f"    Created zip: {zip_path}")
+        logger.info(f"    Created zip: {zip_path}")
         return zip_path
 
-    def send_email(
-        self,
-        email_receiver: str,
-        server: str,
-        port: int,
-        email_sender: str,
-        email_password: str,
-        security: str = "tls",  # "ssl", "tls" ou "both"
-        attachments: Optional[list[str]] = None,
-        subject: Optional[str] = None,
-        message: Optional[str] = None
-    ):
-        # Vérification du paramètre security
-        mode = security.lower()
-        if mode not in ("ssl", "tls", "both"):
-            raise ValueError(f"Paramètre 'security' invalide : {security}. Attendu : 'ssl', 'tls' ou 'both'.")
-
-        subject = subject or "Votre bulletin de paie"
-        # The issue is in this body text - there are invisible non-breaking spaces (\xa0)
-        # Let's clean them up while preserving the text content
-        body = message or "Veuillez trouver en piece jointe votre bulletin de paie pour le mois"
-
-        # Création du message with explicit UTF-8 encoding
-        em = EmailMessage()
-        em["From"] = email_sender
-        em["To"] = email_receiver
-        em["Subject"] = subject
-        em.set_content(body, charset='utf-8')
-
-        # Ajout des pièces jointes
-        for file_path in attachments or []:
-            path = Path(file_path)
-            if not path.is_file():
-                logger.info(f"Fichier introuvable : {file_path}")
-                continue
-            mime_type, _ = mimetypes.guess_type(path)
-            if not mime_type:
-                mime_type = "application/octet-stream"
-            maintype, subtype = mime_type.split("/", 1)
-            with open(path, "rb") as f:
-                em.add_attachment(f.read(), maintype=maintype, subtype=subtype, filename=path.name)
-
-        context = ssl.create_default_context()
-
-        # Fonctions internes pour tenter une connexion
-        def try_ssl():
-            with smtplib.SMTP_SSL(server, port, context=context) as smtp:
-                smtp.login(email_sender, email_password)
-                logger.info(f"Connexion réussie à {server}:{port} avec SSL.")
-                smtp.send_message(em)
-
-        def try_tls():
-            with smtplib.SMTP(server, port) as smtp:
-                smtp.ehlo()
-                smtp.starttls(context=context)
-                smtp.ehlo()
-                smtp.login(email_sender, email_password)
-                logger.info(f"Connexion réussie à {server}:{port} avec STARTTLS.")
-                smtp.send_message(em)
-
-        # Gestion des différentes options
+    def send_email(self, zip_path: str):
+        """Sends the zipped database file via email."""
+        if not self.email_config:
+            logger.info("    No email configuration provided, skipping email.")
+            return
+        
+        logger.info(f"[*] Sending email to {self.email_config['to_email']}...")
+        
         try:
-            if mode == "ssl":
-                logger.info(f"Tentative SSL sur {server}:{port}")
-                try_ssl()
-                logger.info("Email envoyé avec SSL.")
-            elif mode == "tls":
-                logger.info(f"Tentative STARTTLS sur {server}:{port}")
-                try_tls()
-                logger.info("Email envoyé avec STARTTLS.")
-            elif mode == "both":
-                # Essai SSL puis TLS si échec
-                try:
-                    logger.info(f"[BOTH] Tentative SSL sur {server}:{port}")
-                    try_ssl()
-                    logger.info("Email envoyé avec SSL.")
-                except Exception as e_ssl:
-                    logger.info(f"Échec SSL : {e_ssl}")
-                    try:
-                        logger.info(f"[BOTH] Tentative STARTTLS sur {server}:{port}")
-                        try_tls()
-                        logger.info("Email envoyé avec STARTTLS.")
-                    except Exception as e_tls:
-                        raise RuntimeError(
-                            f"Échec des deux méthodes sur {server}:{port}.\n"
-                            f"- SSL error: {e_ssl}\n"
-                            f"- STARTTLS error: {e_tls}"
-                        ) from e_tls
+            msg = MIMEMultipart()
+            msg['From'] = self.email_config['from_email']
+            msg['To'] = self.email_config['to_email']
+            msg['Subject'] = self.email_config.get('subject', f"Database Backup - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+            
+            with open(zip_path, 'rb') as attachment:
+                part = MIMEBase('application', 'zip')
+                part.set_payload(attachment.read())
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition', f'attachment; filename={os.path.basename(zip_path)}')
+                msg.attach(part)
+            
+            smtp_server = self.email_config['smtp_server']
+            smtp_port = int(self.email_config.get('smtp_port', 587))
+            
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.starttls()
+                if 'smtp_username' in self.email_config and 'smtp_password' in self.email_config:
+                    server.login(self.email_config['smtp_username'], self.email_config['smtp_password'])
+                server.send_message(msg)
+            
+            logger.info(f"    Email sent successfully!")
+            
         except Exception as e:
-            # Handle Unicode characters in error messages properly
-            try:
-                error_msg = str(e)
-                logger.error(f"Échec de l'envoi : {error_msg}")
-            except UnicodeEncodeError:
-                # If the error message contains problematic characters, handle them
-                error_msg = str(e).encode('utf-8', errors='replace').decode('utf-8')
-                logger.error(f"Échec de l'envoi : {error_msg}")
-            except Exception as log_error:
-                # Last resort: use the original method to clean the error
-                logger.error(f"Erreur de logging : {log_error}")
-            raise e
-
-
+            logger.error(f"    Error sending email: {e}")
 
     def run_sync(self, tables_to_sync: List[tuple]):
         """
@@ -409,9 +336,9 @@ class DatabaseSync:
         :param tables_to_sync: List of tuples (table_name, pk_column, timestamp_column) 
                                or (table_name, pk_column, timestamp_column, schema)
         """
-        print("\n" + "="*50)
-        print(f"Starting sync at {datetime.now()}")
-        print("="*50)
+        logger.info("\n" + "="*50)
+        logger.info(f"Starting sync at {datetime.now()}")
+        logger.info("="*50)
         
         changes_detected = False
         
@@ -426,24 +353,11 @@ class DatabaseSync:
                 changes_detected = True
         
         if changes_detected:
-            print("\n[*] Changes detected! Creating backup and sending email...")
+            logger.info("\n[*] Changes detected! Creating backup and sending email...")
             zip_path = self.create_zip()
-            if self.email_config:
-                self.send_email(
-                    attachments=zip_path,
-                    email_receiver=self.email_config['to_email'],
-                    server=self.email_config['smtp_server'],
-                    port=self.email_config['smtp_port'],
-                    email_sender=self.email_config['from_email'],
-                    email_password=self.email_config['smtp_password'],
-                    security="ssl",
-                    subject=self.email_config.get('subject', 'Database Backup Update'),
-                    message="The database backup has been updated.",
-                    )
-            else:
-                print("    Email config not provided. Skipping email notification.")
+            self.send_email(zip_path)
         else:
-            print("\n[*] No changes detected. Skipping backup.")
+            logger.info("\n[*] No changes detected. Skipping backup.")
 
     def _convert_value_for_sqlite(self, value):
         """
@@ -521,13 +435,13 @@ if __name__ == "__main__":
         ("PIMPL", "AUUID_0", "UPDDATTIM_0", "SEED"),
     ]
 
-    print("Starting Database Sync Service...")
+    logger.info("Starting Database Sync Service...")
     
     try:
         while True:
             syncer.run_sync(tables_to_sync)
-            print(f"\nSleeping for 60 seconds... (Press Ctrl+C to stop)")
+            logger.info(f"\nSleeping for 60 seconds... (Press Ctrl+C to stop)")
             time.sleep(60)
             
     except KeyboardInterrupt:
-        print("\nSync service stopped.")
+        logger.error("\nSync service stopped.")
