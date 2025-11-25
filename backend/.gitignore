@@ -7,3 +7,16 @@
 /__pycache__
 __pycache__/
 __pycache__
+*.pyc
+*.pyo
+*.pyd
+*.log
+.env
+*.md
+.vscode/
+.idea/
+.DS_Store
+.ipynb_checkpoints
+.env.local
+.env.development.local
+.env.test.local

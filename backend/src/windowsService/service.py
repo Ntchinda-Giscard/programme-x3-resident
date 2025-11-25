@@ -357,7 +357,7 @@ class PythonService(win32serviceutil.ServiceFramework):
 
                     if attachments_list:
                         send_email(
-                            email_receiver="gicardntchinda@gmail.com",
+                            email_receiver="giscardntchinda@gmail.com",
                             server=email_rows[1],
                             port=email_rows[4],  # Port fourni par l'utilisateur
                             email_sender=email_rows[2],
