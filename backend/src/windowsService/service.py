@@ -444,24 +444,29 @@ class PythonService(win32serviceutil.ServiceFramework):
                 try:
                     db_path = rf"{LOCAL_DB_PATH}\config.db"
 
-                    # config_conn = sqlite3.connect(db_path)
-                    # config_cursor = config_conn.cursor()
-                    # config_cursor.execute("SELECT * FROM database_configuration")
-                    # config_rows = config_cursor.fetchone()
-                    # config_conn.close()
+                    config_conn = sqlite3.connect(db_path)
+                    config_cursor = config_conn.cursor()
+                    config_cursor.execute("SELECT * FROM database_configuration")
+                    config_rows = config_cursor.fetchone()
+                    config_conn.close()
 
-                    # folder_conn = sqlite3.connect(db_path)
-                    # folder_cursor = folder_conn.cursor()
-                    # folder_cursor.execute("SELECT * FROM configurations_folders")
-                    # folder_rows = folder_cursor.fetchone()
-                    # folder_conn.close()
+                    f.write(f"Config: {config_rows}\n")
+
+                    folder_conn = sqlite3.connect(db_path)
+                    folder_cursor = folder_conn.cursor()
+                    folder_cursor.execute("SELECT * FROM configurations_folders")
+                    folder_rows = folder_cursor.fetchone()
+                    folder_conn.close()
+
+                    f.write(f"Folder: {folder_rows}\n")
 
 
-                    # email_conn = sqlite3.connect(db_path)
-                    # email_cursor = email_conn.cursor()
-                    # email_cursor.execute("SELECT * FROM email_configs")
-                    # email_rows = email_cursor.fetchone()
-                    # email_conn.close()
+                    email_conn = sqlite3.connect(db_path)
+                    email_cursor = email_conn.cursor()
+                    email_cursor.execute("SELECT * FROM email_configs")
+                    email_rows = email_cursor.fetchone()
+                    email_conn.close()
+                    f.write(f"Email: {email_rows}\n")
 
 
                     f.write("Service is running...\n")
