@@ -177,7 +177,6 @@ class DatabaseSync:
         local_db_path: str = rf"{LOCAL_DB_PATH}\local_data.db",
         zip_folder: str = ZIP_FOLDER,
         email_config: Optional[Dict[str, str]] = None,
-        f: Optional[Any] = None
     ):
         """
         Initialize the sync manager.
@@ -191,7 +190,6 @@ class DatabaseSync:
         self.local_db_path = local_db_path
         self.zip_folder = zip_folder
         self.email_config = email_config
-        self.file = f
         
         # Create zip folder if it doesn't exist
         Path(self.zip_folder).mkdir(parents=True, exist_ok=True)
@@ -233,10 +231,8 @@ class DatabaseSync:
                     f"Trusted_Connection=yes"
                 )
         
-        if self.file:
-            self.file.write(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}\n")
-        else:
-            logger.info(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}")
+ 
+        logger.info(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}")
         return pyodbc.connect(conn_str)
 
     def _get_local_connection(self):
@@ -323,10 +319,10 @@ class DatabaseSync:
         :param schema: Schema name (default: dbo) - IMPORTANT for avoiding duplicate columns
         :return: True if changes were made, False otherwise
         """
-        self.file.write(f"[*] Starting sync for table: {schema}.{table_name}") # type: ignore
+        logger.info(f"[*] Starting sync for table: {schema}.{table_name}") # type: ignore
         
         last_sync = self.get_last_sync_time(table_name)
-        self.file.write(f"    Last sync time: {last_sync}") # type: ignore
+        logger.info(f"    Last sync time: {last_sync}") # type: ignore
 
         try:
             sql_conn = self._get_sql_connection()
@@ -341,7 +337,7 @@ class DatabaseSync:
             columns = [(row.COLUMN_NAME, row.DATA_TYPE) for row in sql_cursor.fetchall()]
             
             if not columns:
-                self.file.write(f"    Warning: No columns found for {schema}.{table_name}, trying without schema filter...") # type: ignore
+                logger.info(f"    Warning: No columns found for {schema}.{table_name}, trying without schema filter...") # type: ignore
                 sql_cursor.execute(f"""
                     SELECT DISTINCT COLUMN_NAME, DATA_TYPE 
                     FROM INFORMATION_SCHEMA.COLUMNS 
@@ -351,7 +347,7 @@ class DatabaseSync:
                 columns = [(row.COLUMN_NAME, row.DATA_TYPE) for row in sql_cursor.fetchall()]
                 
                 if not columns:
-                    self.file.write(f"    Error: Table {table_name} not found in SQL Server.") # type: ignore
+                    logger.info(f"    Error: Table {table_name} not found in SQL Server.") # type: ignore
                     return False
 
             self.ensure_local_table_exists(table_name, columns, pk_column)
@@ -372,11 +368,11 @@ class DatabaseSync:
             rows = sql_cursor.fetchall()
             
             if not rows:
-                self.file.write("    No new changes found.") # type: ignore
+                logger.info("    No new changes found.") # type: ignore
                 sql_conn.close()
                 return False
 
-            self.file.write(f"    Found {len(rows)} records to update.") # type: ignore
+            logger.info(f"    Found {len(rows)} records to update.") # type: ignore
 
             local_conn = self._get_local_connection()
             local_cursor = local_conn.cursor()
@@ -418,7 +414,7 @@ class DatabaseSync:
                 
             except Exception as e:
                 local_conn.rollback()
-                self.file.write(f"    Error writing to local DB: {e}") # type: ignore
+                logger.info(f"    Error writing to local DB: {e}") # type: ignore
                 raise
             finally:
                 local_conn.close()
@@ -428,16 +424,16 @@ class DatabaseSync:
             return True
 
         except Exception as e:
-            self.file.write(f"    Sync failed: {e}") # type: ignore
+            logger.info(f"    Sync failed: {e}") # type: ignore
             return False
 
     def create_zip(self) -> str:
         """Creates a zip file of the SQLite database and removes any old zip files."""
-        self.file.write(f"[*] Creating zip archive of {self.local_db_path}...") # type: ignore
+        logger.info(f"[*] Creating zip archive of {self.local_db_path}...") # type: ignore
         
         for file in Path(self.zip_folder).glob("*.zip"):
             file.unlink()
-            self.file.write(f"    Removed old zip: {file}") # type: ignore
+            logger.info(f"    Removed old zip: {file}") # type: ignore
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         zip_filename = f"database_backup_{timestamp}.zip"
@@ -446,16 +442,16 @@ class DatabaseSync:
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             zipf.write(self.local_db_path, arcname=os.path.basename(self.local_db_path))
         
-        self.file.write(f"    Created zip: {zip_path}") # type: ignore
+        logger.info(f"    Created zip: {zip_path}") # type: ignore
         return zip_path
 
     def send_email(self, zip_path: str):
         """Sends the zipped database file via email."""
         if not self.email_config:
-            self.file.write("    No email configuration provided, skipping email.") # type: ignore
+            logger.info("    No email configuration provided, skipping email.") # type: ignore
             return
         
-        self.file.write(f"[*] Sending email to {self.email_config['to_email']}...") # type: ignore
+        logger.info(f"[*] Sending email to {self.email_config['to_email']}...") # type: ignore
         
         try:
             msg = MIMEMultipart()
@@ -479,10 +475,10 @@ class DatabaseSync:
                     server.login(self.email_config['smtp_username'], self.email_config['smtp_password'])
                 server.send_message(msg)
             
-            self.file.write(f"    Email sent successfully!") # type: ignore
+            logger.info(f"    Email sent successfully!") # type: ignore
             
         except Exception as e:
-            self.file.write(f"    Error sending email: {e}") # type: ignore
+            logger.info(f"    Error sending email: {e}") # type: ignore
 
     def run_sync(self, tables_to_sync: List[tuple]):
         """
@@ -491,9 +487,9 @@ class DatabaseSync:
         :param tables_to_sync: List of tuples (table_name, pk_column, timestamp_column) 
                                or (table_name, pk_column, timestamp_column, schema)
         """
-        self.file.write("\n" + "="*50) # type: ignore
-        self.file.write(f"Starting sync at {datetime.now()}") # type: ignore
-        self.file.write("="*50) # type: ignore
+        logger.info("\n" + "="*50) # type: ignore
+        logger.info(f"Starting sync at {datetime.now()}") # type: ignore
+        logger.info("="*50) # type: ignore
         
         changes_detected = False
         
@@ -508,11 +504,11 @@ class DatabaseSync:
                 changes_detected = True
         
         if changes_detected:
-            self.file.write("\n[*] Changes detected! Creating backup and sending email...") # type: ignore
+            logger.info("\n[*] Changes detected! Creating backup and sending email...") # type: ignore
             zip_path = self.create_zip()
             self.send_email(zip_path)
         else:
-            self.file.write("\n[*] No changes detected. Skipping backup.") # type: ignore
+            logger.info("\n[*] No changes detected. Skipping backup.") # type: ignore
 
     def _convert_value_for_sqlite(self, value):
         """
@@ -574,117 +570,116 @@ class PythonService(win32serviceutil.ServiceFramework):
 
         while self.running:
             # 👉 Put your custom Python code here
-            with open("C:\\poswaza:\\logs\\service_log.txt", "a") as f:
+            with open(rf"{LOCAL_DB_PATH}\logs\service_log.txt", "a") as f:
                 try:
-                    db_path = r"c:/posdatabase/config.db"
+                    db_path = rf"{LOCAL_DB_PATH}\config.db"
 
-                    config_conn = sqlite3.connect(db_path)
-                    config_cursor = config_conn.cursor()
-                    config_cursor.execute("SELECT * FROM database_configuration")
-                    config_rows = config_cursor.fetchone()
-                    config_conn.close()
+                    # config_conn = sqlite3.connect(db_path)
+                    # config_cursor = config_conn.cursor()
+                    # config_cursor.execute("SELECT * FROM database_configuration")
+                    # config_rows = config_cursor.fetchone()
+                    # config_conn.close()
 
-                    folder_conn = sqlite3.connect(db_path)
-                    folder_cursor = folder_conn.cursor()
-                    folder_cursor.execute("SELECT * FROM configurations_folders")
-                    folder_rows = folder_cursor.fetchone()
-                    folder_conn.close()
+                    # folder_conn = sqlite3.connect(db_path)
+                    # folder_cursor = folder_conn.cursor()
+                    # folder_cursor.execute("SELECT * FROM configurations_folders")
+                    # folder_rows = folder_cursor.fetchone()
+                    # folder_conn.close()
 
 
-                    email_conn = sqlite3.connect(db_path)
-                    email_cursor = email_conn.cursor()
-                    email_cursor.execute("SELECT * FROM email_configs")
-                    email_rows = email_cursor.fetchone()
-                    email_conn.close()
+                    # email_conn = sqlite3.connect(db_path)
+                    # email_cursor = email_conn.cursor()
+                    # email_cursor.execute("SELECT * FROM email_configs")
+                    # email_rows = email_cursor.fetchone()
+                    # email_conn.close()
 
-                    sql_config = {
-                        'username': 'superadmin',
-                        'password': 'MotDePasseFort123!',
-                        'server': '192.168.2.41,1433',
-                        'database': 'x3waza',
-                        'driver': 'ODBC Driver 17 for SQL Server'
-                    }
+                    # sql_config = {
+                    #     'username': 'superadmin',
+                    #     'password': 'MotDePasseFort123!',
+                    #     'server': '192.168.2.41,1433',
+                    #     'database': 'x3waza',
+                    #     'driver': 'ODBC Driver 17 for SQL Server'
+                    # }
 
-                    email_config = {
-                        'smtp_server': 'smtp.gmail.com',
-                        'smtp_port': 465,
-                        'smtp_username': 'ntchinda1998@gmail.com',
-                        'smtp_password': 'txdp zcoh ucum ezxt',
-                        'from_email': 'ntchinda1998@gmail.com',
-                        'to_email': 'giscardntchinda@gmail.com',
-                        'subject': 'Database Backup Update'
-                    }
+                    # email_config = {
+                    #     'smtp_server': 'smtp.gmail.com',
+                    #     'smtp_port': 465,
+                    #     'smtp_username': 'ntchinda1998@gmail.com',
+                    #     'smtp_password': 'txdp zcoh ucum ezxt',
+                    #     'from_email': 'ntchinda1998@gmail.com',
+                    #     'to_email': 'giscardntchinda@gmail.com',
+                    #     'subject': 'Database Backup Update'
+                    # }
 
-                    syncer = DatabaseSync(
-                            sql_config, 
-                            local_db_path=rf"{LOCAL_DB_PATH}\local_data.db",
-                            zip_folder=ZIP_FOLDER,
-                            email_config=email_config,
-                            f=f
-                        )
-                    tables_to_sync = [
-                        ("ITMMASTER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("ITMFACILIT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPARTNER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPCUSTOMER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPCUSTMVT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPDLVCUST", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SALESREP", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SPRICLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("PRICSTRUCT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SPREASON", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SPRICCONF", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SPRICLIST", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("PIMPL", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("STOCK", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("FACILITY", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPCARRIER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("COMPANY", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPDLVCUST", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABSOHTYP", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABVACBPR", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SVCRVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("ITMCATEG", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("CBLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BLOBEXPENSES", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("ABLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("AUTILIS", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("AMENUSER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPADDRESS", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("WAREHOUSE", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABPAYTERM", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABDEPAGIO", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPCINVVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABRATVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABVACITM", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABVAC", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TAXLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SFOOTINV", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SORDERQ", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SORDERP", "AUUID_0", "UPDDATTIM_0", "SEED")
-                    ]
+                    # syncer = DatabaseSync(
+                    #         sql_config, 
+                    #         local_db_path=rf"{LOCAL_DB_PATH}\local_data.db",
+                    #         zip_folder=ZIP_FOLDER,
+                    #         email_config=email_config,
+                    #     )
+                    # tables_to_sync = [
+                    #     ("ITMMASTER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("ITMFACILIT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("BPARTNER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("BPCUSTOMER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("BPCUSTMVT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("BPDLVCUST", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("SALESREP", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("SPRICLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("PRICSTRUCT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("SPREASON", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("SPRICCONF", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("SPRICLIST", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("PIMPL", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("STOCK", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("FACILITY", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("BPCARRIER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("COMPANY", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("BPDLVCUST", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("TABSOHTYP", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("TABVACBPR", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("SVCRVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("ITMCATEG", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("CBLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("BLOBEXPENSES", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("ABLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("AUTILIS", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("AMENUSER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("BPADDRESS", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("WAREHOUSE", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("TABPAYTERM", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("TABDEPAGIO", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("BPCINVVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("TABRATVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("TABVACITM", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("TABVAC", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("TAXLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("SFOOTINV", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("SORDERQ", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                    #     ("SORDERP", "AUUID_0", "UPDDATTIM_0", "SEED")
+                    # ]
 
-                    f.write("Starting Database Sync Service...")
+                    # f.write("Starting Database Sync Service...")
                     
-                    try:
-                        while True:
-                            syncer.run_sync(tables_to_sync)
-                            f.write(f"\nSleeping for 60 seconds... (Press Ctrl+C to stop)")
-                            time.sleep(60)
+                    # try:
+                    #     while True:
+                    #         syncer.run_sync(tables_to_sync)
+                    #         f.write(f"\nSleeping for 60 seconds... (Press Ctrl+C to stop)")
+                    #         time.sleep(60)
                             
-                    except KeyboardInterrupt:
-                        f.write("\nSync service stopped.")
-
-                    f.write(f"Connected to obdc.\n {config_rows} dsn= {config_rows[1]}, username={config_rows[6]}, password={config_rows[7]}, database=x3waza ")
-                    f.write(f"Email config: {email_rows}\n")
+                    # except KeyboardInterrupt:
+                    #     f.write("\nSync service stopped.")
+                    f.write("Service is running...\n")
+                    # f.write(f"Connected to obdc.\n {config_rows} dsn= {config_rows[1]}, username={config_rows[6]}, password={config_rows[7]}, database=x3waza ")
+                    # f.write(f"Email config: {email_rows}\n")
                 except Exception as e:
-                    f.write(f"Error connecting to SQL Server: {e}\n")
+                    f.write(f"Error in service execution: {e}\n")
 
             time.sleep(60)  # Wait 60 seconds before next loop
 
