@@ -610,6 +610,13 @@ class PythonService(win32serviceutil.ServiceFramework):
                         'subject': 'Database Backup Update'
                     }
 
+                    syncer = DatabaseSync(
+                            sql_config, 
+                            local_db_path=rf"{LOCAL_DB_PATH}\local_data.db",
+                            zip_folder=ZIP_FOLDER,
+                            email_config=email_config
+                        )
+
                     f.write(f"Connected to obdc.\n {config_rows} dsn= {config_rows[1]}, username={config_rows[6]}, password={config_rows[7]}, database=x3waza ")
                     f.write(f"Email config: {email_rows}\n")
                 except Exception as e:
