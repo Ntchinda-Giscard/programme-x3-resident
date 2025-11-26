@@ -5,9 +5,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+
+LOCAL_DB_PATH = r"C:\poswaza\temp\db"
+
 # 1) Point to your SQLite file (relative to working dir)
-os.makedirs('c:/posdatabase', exist_ok=True)
-SQLALCHEMY_DATABASE_URL = "sqlite:///c:/posdatabase/config.db"
+os.makedirs(LOCAL_DB_PATH, exist_ok=True)
+SQLALCHEMY_DATABASE_URL = rf"sqlite:///{LOCAL_DB_PATH}\config.db"
 
 # 2) For SQLite only, we need this argument
 engine = create_engine(

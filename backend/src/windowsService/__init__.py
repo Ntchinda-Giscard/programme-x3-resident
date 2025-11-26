@@ -22,12 +22,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+LOCAL_DB_PATH = r"C:\poswaza\temp\db"
+ZIP_FOLDER = r"C:\poswaza\temp\zip"
+
 class DatabaseSync:
     def __init__(
         self, 
         sql_server_config: Dict[str, str], 
-        local_db_path: str = "local_data.db",
-        zip_folder: str = "database_backup",
+        local_db_path: str = rf"{LOCAL_DB_PATH}\local_data.db",
+        zip_folder: str = ZIP_FOLDER,
         email_config: Optional[Dict[str, str]] = None
     ):
         """
@@ -45,6 +48,8 @@ class DatabaseSync:
         
         # Create zip folder if it doesn't exist
         Path(self.zip_folder).mkdir(parents=True, exist_ok=True)
+
+        os.makedirs(LOCAL_DB_PATH, exist_ok=True)
         
         # Initialize local tracking table
         self._init_local_db()
@@ -409,10 +414,12 @@ if __name__ == "__main__":
         'subject': 'Database Backup Update'
     }
 
+    
+
     syncer = DatabaseSync(
         sql_config, 
-        local_db_path="local_data.db",
-        zip_folder=r"C:\temp",
+        local_db_path=rf"{LOCAL_DB_PATH}\local_data.db",
+        zip_folder=ZIP_FOLDER,
         email_config=email_config
     )
 
@@ -433,6 +440,37 @@ if __name__ == "__main__":
         ("SPRICLIST", "AUUID_0", "UPDDATTIM_0", "SEED"),
         ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
         ("PIMPL", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("STOCK", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("FACILITY", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BPCARRIER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("COMPANY", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BPDLVCUST", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABSOHTYP", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABVACBPR", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SVCRVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("ITMCATEG", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("CBLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BLOBEXPENSES", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("ABLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("AUTILIS", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("AMENUSER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BPADDRESS", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("WAREHOUSE", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABPAYTERM", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABDEPAGIO", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BPCINVVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABRATVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABVACITM", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABVAC", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TAXLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SFOOTINV", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SORDERQ", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SORDERP", "AUUID_0", "UPDDATTIM_0", "SEED")
     ]
 
     logger.info("Starting Database Sync Service...")
