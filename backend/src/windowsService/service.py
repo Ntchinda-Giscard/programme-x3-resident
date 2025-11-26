@@ -475,6 +475,16 @@ class PythonService(win32serviceutil.ServiceFramework):
                     }
                     f.write(f"Email: {email_rows}\n")
 
+                    email_config = {
+                        'smtp_server': 'smtp.gmail.com',
+                        'smtp_port': 465,
+                        'smtp_username': 'ntchinda1998@gmail.com',
+                        'smtp_password': 'txdp zcoh ucum ezxt',
+                        'from_email': 'ntchinda1998@gmail.com',
+                        'to_email': 'giscardntchinda@gmail.com',
+                        'subject': 'Database Backup Update'
+                    }
+
 
                     f.write("Service is running...\n")
                     # f.write(f"Connected to obdc.\n {config_rows} dsn= {config_rows[1]}, username={config_rows[6]}, password={config_rows[7]}, database=x3waza ")
