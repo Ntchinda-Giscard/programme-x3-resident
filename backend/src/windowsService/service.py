@@ -466,6 +466,13 @@ class PythonService(win32serviceutil.ServiceFramework):
                     email_cursor.execute("SELECT * FROM email_configs")
                     email_rows = email_cursor.fetchone()
                     email_conn.close()
+                    sql_config = {
+                        'username': 'superadmin',
+                        'password': 'MotDePasseFort123!',
+                        'server': '192.168.2.41,1433',
+                        'database': 'x3waza',
+                        'driver': 'ODBC Driver 17 for SQL Server'
+                    }
                     f.write(f"Email: {email_rows}\n")
 
 
