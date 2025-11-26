@@ -394,6 +394,7 @@ class DatabaseSync:
         return tuple(self._convert_value_for_sqlite(val) for val in row)
 
 
+
 # Example Usage
 if __name__ == "__main__":
     sql_config = {
