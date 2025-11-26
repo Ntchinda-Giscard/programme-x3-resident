@@ -449,6 +449,13 @@ class PythonService(win32serviceutil.ServiceFramework):
                     config_cursor.execute("SELECT * FROM database_configuration")
                     config_rows = config_cursor.fetchone()
                     config_conn.close()
+                    sql_config = {
+                        'username': 'superadmin',
+                        'password': 'MotDePasseFort123!',
+                        'server': '192.168.2.41,1433',
+                        'database': 'x3waza',
+                        'driver': 'ODBC Driver 17 for SQL Server'
+                    }
 
                     f.write(f"Config: {config_rows}\n")
 
@@ -466,22 +473,16 @@ class PythonService(win32serviceutil.ServiceFramework):
                     email_cursor.execute("SELECT * FROM email_configs")
                     email_rows = email_cursor.fetchone()
                     email_conn.close()
-                    sql_config = {
-                        'username': 'superadmin',
-                        'password': 'MotDePasseFort123!',
-                        'server': '192.168.2.41,1433',
-                        'database': 'x3waza',
-                        'driver': 'ODBC Driver 17 for SQL Server'
-                    }
+                    
                     f.write(f"Email: {email_rows}\n")
 
                     email_config = {
-                        'smtp_server': 'smtp.gmail.com',
-                        'smtp_port': 465,
-                        'smtp_username': 'ntchinda1998@gmail.com',
-                        'smtp_password': 'txdp zcoh ucum ezxt',
-                        'from_email': 'ntchinda1998@gmail.com',
-                        'to_email': 'giscardntchinda@gmail.com',
+                        'smtp_server': email_rows[1],
+                        'smtp_port': email_rows[4],
+                        'smtp_username': email_rows[2],
+                        'smtp_password': email_rows[3],
+                        'from_email': email_rows[2],
+                        'to_email': email_rows[5],
                         'subject': 'Database Backup Update'
                     }
 

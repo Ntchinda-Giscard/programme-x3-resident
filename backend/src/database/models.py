@@ -24,6 +24,7 @@ class EmailConfig(Base):
     id = Column(Integer, primary_key=True, index=True)
     smtp_server = Column(String, nullable=True)
     user_name = Column(String, nullable=True)
+    receiver_email = Column(String, nullable=True)
     password = Column(String, nullable=True)
     port = Column(Integer, nullable=True)
     tls = Column(Boolean, nullable=True)
