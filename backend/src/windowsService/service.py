@@ -1,6 +1,6 @@
 # import boto3
 # from botocore.exceptions import ClientError
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import win32serviceutil
 import win32service
 import win32event
@@ -176,7 +176,8 @@ class DatabaseSync:
         sql_server_config: Dict[str, str], 
         local_db_path: str = rf"{LOCAL_DB_PATH}\local_data.db",
         zip_folder: str = ZIP_FOLDER,
-        email_config: Optional[Dict[str, str]] = None
+        email_config: Optional[Dict[str, str]] = None,
+        f: Optional[Any] = None
     ):
         """
         Initialize the sync manager.
@@ -190,6 +191,7 @@ class DatabaseSync:
         self.local_db_path = local_db_path
         self.zip_folder = zip_folder
         self.email_config = email_config
+        self.file = f
         
         # Create zip folder if it doesn't exist
         Path(self.zip_folder).mkdir(parents=True, exist_ok=True)
@@ -231,7 +233,10 @@ class DatabaseSync:
                     f"Trusted_Connection=yes"
                 )
         
-        logger.info(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}")
+        if self.file:
+            self.file.write(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}\n")
+        else:
+            logger.info(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}")
         return pyodbc.connect(conn_str)
 
     def _get_local_connection(self):
@@ -318,10 +323,10 @@ class DatabaseSync:
         :param schema: Schema name (default: dbo) - IMPORTANT for avoiding duplicate columns
         :return: True if changes were made, False otherwise
         """
-        logger.info(f"[*] Starting sync for table: {schema}.{table_name}")
+        self.file.write(f"[*] Starting sync for table: {schema}.{table_name}") # type: ignore
         
         last_sync = self.get_last_sync_time(table_name)
-        logger.info(f"    Last sync time: {last_sync}")
+        self.file.write(f"    Last sync time: {last_sync}") # type: ignore
 
         try:
             sql_conn = self._get_sql_connection()
@@ -336,7 +341,7 @@ class DatabaseSync:
             columns = [(row.COLUMN_NAME, row.DATA_TYPE) for row in sql_cursor.fetchall()]
             
             if not columns:
-                logger.info(f"    Warning: No columns found for {schema}.{table_name}, trying without schema filter...")
+                self.file.write(f"    Warning: No columns found for {schema}.{table_name}, trying without schema filter...") # type: ignore
                 sql_cursor.execute(f"""
                     SELECT DISTINCT COLUMN_NAME, DATA_TYPE 
                     FROM INFORMATION_SCHEMA.COLUMNS 
@@ -346,7 +351,7 @@ class DatabaseSync:
                 columns = [(row.COLUMN_NAME, row.DATA_TYPE) for row in sql_cursor.fetchall()]
                 
                 if not columns:
-                    logger.info(f"    Error: Table {table_name} not found in SQL Server.")
+                    self.file.write(f"    Error: Table {table_name} not found in SQL Server.") # type: ignore
                     return False
 
             self.ensure_local_table_exists(table_name, columns, pk_column)
@@ -367,11 +372,11 @@ class DatabaseSync:
             rows = sql_cursor.fetchall()
             
             if not rows:
-                logger.info("    No new changes found.")
+                self.file.write("    No new changes found.") # type: ignore
                 sql_conn.close()
                 return False
 
-            logger.info(f"    Found {len(rows)} records to update.")
+            self.file.write(f"    Found {len(rows)} records to update.") # type: ignore
 
             local_conn = self._get_local_connection()
             local_cursor = local_conn.cursor()
@@ -413,7 +418,7 @@ class DatabaseSync:
                 
             except Exception as e:
                 local_conn.rollback()
-                logger.info(f"    Error writing to local DB: {e}")
+                self.file.write(f"    Error writing to local DB: {e}") # type: ignore
                 raise
             finally:
                 local_conn.close()
@@ -423,16 +428,16 @@ class DatabaseSync:
             return True
 
         except Exception as e:
-            logger.info(f"    Sync failed: {e}")
+            self.file.write(f"    Sync failed: {e}") # type: ignore
             return False
 
     def create_zip(self) -> str:
         """Creates a zip file of the SQLite database and removes any old zip files."""
-        logger.info(f"[*] Creating zip archive of {self.local_db_path}...")
+        self.file.write(f"[*] Creating zip archive of {self.local_db_path}...") # type: ignore
         
         for file in Path(self.zip_folder).glob("*.zip"):
             file.unlink()
-            logger.info(f"    Removed old zip: {file}")
+            self.file.write(f"    Removed old zip: {file}") # type: ignore
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         zip_filename = f"database_backup_{timestamp}.zip"
@@ -441,16 +446,16 @@ class DatabaseSync:
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             zipf.write(self.local_db_path, arcname=os.path.basename(self.local_db_path))
         
-        logger.info(f"    Created zip: {zip_path}")
+        self.file.write(f"    Created zip: {zip_path}") # type: ignore
         return zip_path
 
     def send_email(self, zip_path: str):
         """Sends the zipped database file via email."""
         if not self.email_config:
-            logger.info("    No email configuration provided, skipping email.")
+            self.file.write("    No email configuration provided, skipping email.") # type: ignore
             return
         
-        logger.info(f"[*] Sending email to {self.email_config['to_email']}...")
+        self.file.write(f"[*] Sending email to {self.email_config['to_email']}...") # type: ignore
         
         try:
             msg = MIMEMultipart()
@@ -474,10 +479,10 @@ class DatabaseSync:
                     server.login(self.email_config['smtp_username'], self.email_config['smtp_password'])
                 server.send_message(msg)
             
-            logger.info(f"    Email sent successfully!")
+            self.file.write(f"    Email sent successfully!") # type: ignore
             
         except Exception as e:
-            logger.error(f"    Error sending email: {e}")
+            self.file.write(f"    Error sending email: {e}") # type: ignore
 
     def run_sync(self, tables_to_sync: List[tuple]):
         """
@@ -486,9 +491,9 @@ class DatabaseSync:
         :param tables_to_sync: List of tuples (table_name, pk_column, timestamp_column) 
                                or (table_name, pk_column, timestamp_column, schema)
         """
-        logger.info("\n" + "="*50)
-        logger.info(f"Starting sync at {datetime.now()}")
-        logger.info("="*50)
+        self.file.write("\n" + "="*50) # type: ignore
+        self.file.write(f"Starting sync at {datetime.now()}") # type: ignore
+        self.file.write("="*50) # type: ignore
         
         changes_detected = False
         
@@ -503,11 +508,11 @@ class DatabaseSync:
                 changes_detected = True
         
         if changes_detected:
-            logger.info("\n[*] Changes detected! Creating backup and sending email...")
+            self.file.write("\n[*] Changes detected! Creating backup and sending email...") # type: ignore
             zip_path = self.create_zip()
             self.send_email(zip_path)
         else:
-            logger.info("\n[*] No changes detected. Skipping backup.")
+            self.file.write("\n[*] No changes detected. Skipping backup.") # type: ignore
 
     def _convert_value_for_sqlite(self, value):
         """
@@ -614,55 +619,56 @@ class PythonService(win32serviceutil.ServiceFramework):
                             sql_config, 
                             local_db_path=rf"{LOCAL_DB_PATH}\local_data.db",
                             zip_folder=ZIP_FOLDER,
-                            email_config=email_config
+                            email_config=email_config,
+                            f=f
                         )
                     tables_to_sync = [
-        ("ITMMASTER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("ITMFACILIT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("BPARTNER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("BPCUSTOMER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("BPCUSTMVT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("BPDLVCUST", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("SALESREP", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("SPRICLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("PRICSTRUCT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("SPREASON", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("SPRICCONF", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("SPRICLIST", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("PIMPL", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("STOCK", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("FACILITY", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("BPCARRIER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("COMPANY", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("BPDLVCUST", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("TABSOHTYP", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("TABVACBPR", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("SVCRVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("ITMCATEG", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("CBLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("BLOBEXPENSES", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("ABLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("AUTILIS", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("AMENUSER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("BPADDRESS", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("WAREHOUSE", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("TABPAYTERM", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("TABDEPAGIO", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("BPCINVVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("TABRATVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("TABVACITM", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("TABVAC", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("TAXLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("SFOOTINV", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("SORDERQ", "AUUID_0", "UPDDATTIM_0", "SEED"),
-        ("SORDERP", "AUUID_0", "UPDDATTIM_0", "SEED")
-    ]
+                        ("ITMMASTER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("ITMFACILIT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("BPARTNER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("BPCUSTOMER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("BPCUSTMVT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("BPDLVCUST", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("SALESREP", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("SPRICLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("PRICSTRUCT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("SPREASON", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("SPRICCONF", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("SPRICLIST", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("PIMPL", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("STOCK", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("FACILITY", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("BPCARRIER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("COMPANY", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("BPDLVCUST", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("TABSOHTYP", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("TABVACBPR", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("SVCRVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("ITMCATEG", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("CBLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("BLOBEXPENSES", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("ABLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("AUTILIS", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("AMENUSER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("BPADDRESS", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("WAREHOUSE", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("TABPAYTERM", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("TABDEPAGIO", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("BPCINVVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("TABRATVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("TABVACITM", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("TABVAC", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("TAXLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("SFOOTINV", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("SORDERQ", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("SORDERP", "AUUID_0", "UPDDATTIM_0", "SEED")
+                    ]
 
                     f.write("Starting Database Sync Service...")
                     
