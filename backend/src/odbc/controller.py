@@ -70,6 +70,7 @@ def add_database_server(input: DatabaseServerAdd, db: Session):
         host=input.host,
         port=input.port,
         database=input.database,
+        schemas=input.schemas,
         username=input.username,
         password=input.password
     )

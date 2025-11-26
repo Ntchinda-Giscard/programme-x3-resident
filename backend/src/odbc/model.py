@@ -10,5 +10,6 @@ class DatabaseServerAdd(BaseModel):
     host: Optional[str] = None
     port: Optional[int] = None
     database: Optional[str] = None
+    schemas: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str] = None

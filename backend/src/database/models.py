@@ -16,6 +16,7 @@ class DatabaseConfiguration(Base):
     host = Column(String, nullable=True)
     port = Column(Integer, nullable=True)
     database = Column(String, nullable=True)
+    schemas = Column(String, nullable=True)
     username = Column(String, nullable=True)
     password = Column(String, nullable=True)
 
@@ -24,9 +25,9 @@ class EmailConfig(Base):
     id = Column(Integer, primary_key=True, index=True)
     smtp_server = Column(String, nullable=True)
     user_name = Column(String, nullable=True)
-    receiver_email = Column(String, nullable=True)
     password = Column(String, nullable=True)
     port = Column(Integer, nullable=True)
+    receiver_email = Column(String, nullable=True)
     tls = Column(Boolean, nullable=True)
     ssl = Column(Boolean, nullable=True)
     subject = Column(String, nullable=True)

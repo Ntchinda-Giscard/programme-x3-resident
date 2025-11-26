@@ -450,12 +450,20 @@ class PythonService(win32serviceutil.ServiceFramework):
                     config_rows = config_cursor.fetchone()
                     config_conn.close()
                     sql_config = {
-                        'username': 'superadmin',
-                        'password': 'MotDePasseFort123!',
-                        'server': '192.168.2.41,1433',
-                        'database': 'x3waza',
-                        'driver': 'ODBC Driver 17 for SQL Server'
+                        'username': config_rows[7],
+                        'password': config_rows[8],
+                        'server': f"{config_rows[3]},{config_rows[4]}",
+                        'database': config_rows[5],
+                        'driver': 'ODBC Driver 17 for SQL Server',
+                        'dsn': config_rows[1]
                     }
+                    # sql_config = {
+                    #     'username': 'superadmin',
+                    #     'password': 'MotDePasseFort123!',
+                    #     'server': '192.168.2.41,1433',
+                    #     'database': 'x3waza',
+                    #     'driver': 'ODBC Driver 17 for SQL Server'
+                    # }
 
                     f.write(f"Config: {config_rows}\n")
 
@@ -485,6 +493,13 @@ class PythonService(win32serviceutil.ServiceFramework):
                         'to_email': email_rows[5],
                         'subject': 'Database Backup Update'
                     }
+
+                    syncer = DatabaseSync(
+                        sql_config, 
+                        local_db_path=rf"{LOCAL_DB_PATH}\local_data.db",
+                        zip_folder=ZIP_FOLDER,
+                        email_config=email_config
+                    )
 
 
                     f.write("Service is running...\n")
