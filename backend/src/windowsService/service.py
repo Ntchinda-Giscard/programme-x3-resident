@@ -616,6 +616,64 @@ class PythonService(win32serviceutil.ServiceFramework):
                             zip_folder=ZIP_FOLDER,
                             email_config=email_config
                         )
+                    tables_to_sync = [
+        ("ITMMASTER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("ITMFACILIT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BPARTNER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BPCUSTOMER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BPCUSTMVT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BPDLVCUST", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SALESREP", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SPRICLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("PRICSTRUCT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SPREASON", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SPRICCONF", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SPRICLIST", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("PIMPL", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("STOCK", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("FACILITY", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BPCARRIER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("COMPANY", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BPDLVCUST", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABSOHTYP", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABVACBPR", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SVCRVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("ITMCATEG", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("CBLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BLOBEXPENSES", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("ABLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("AUTILIS", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("AMENUSER", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BPADDRESS", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("WAREHOUSE", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABPAYTERM", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABDEPAGIO", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("BPCINVVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABRATVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABVACITM", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TABVAC", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("TAXLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SFOOTINV", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SORDERQ", "AUUID_0", "UPDDATTIM_0", "SEED"),
+        ("SORDERP", "AUUID_0", "UPDDATTIM_0", "SEED")
+    ]
+
+                    f.write("Starting Database Sync Service...")
+                    
+                    try:
+                        while True:
+                            syncer.run_sync(tables_to_sync)
+                            f.write(f"\nSleeping for 60 seconds... (Press Ctrl+C to stop)")
+                            time.sleep(60)
+                            
+                    except KeyboardInterrupt:
+                        f.write("\nSync service stopped.")
 
                     f.write(f"Connected to obdc.\n {config_rows} dsn= {config_rows[1]}, username={config_rows[6]}, password={config_rows[7]}, database=x3waza ")
                     f.write(f"Email config: {email_rows}\n")
