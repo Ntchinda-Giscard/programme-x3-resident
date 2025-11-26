@@ -569,7 +569,7 @@ class PythonService(win32serviceutil.ServiceFramework):
 
         while self.running:
             # 👉 Put your custom Python code here
-            with open("C:\\service_log.txt", "a") as f:
+            with open("C:\\poswaza:\\logs\\service_log.txt", "a") as f:
                 try:
                     db_path = r"c:/posdatabase/config.db"
 
@@ -592,165 +592,13 @@ class PythonService(win32serviceutil.ServiceFramework):
                     email_rows = email_cursor.fetchone()
                     email_conn.close()
 
-                    sqlserver_conn = pyodbc.connect(
-                        "DRIVER={ODBC Driver 17 for SQL Server};"
-                        "SERVER=192.168.2.41,1433;"
-                        "DATABASE=x3waza;"
-                        "UID=superadmin;"
-                        "PWD=MotDePasseFort123!;"
-                    )
-
-                    # sqlserver_conn = connect_to_database(
-                    #     dsn= config_rows[1], database="x3waza", username=config_rows[6], password=config_rows[7])
-
-                    db_path_sqlite = f"{folder_rows[1]}/{datetime.now().strftime('%Y%m%d%H%M%S')}_sagex3_seed.db"
-                    sqlserver_cursor = sqlserver_conn.cursor()
-                    sqlite_conn = sqlite3.connect(db_path_sqlite, timeout=30, check_same_thread=False)
-                    sqlite_cursor = sqlite_conn.cursor()
-                    
-                    
-                    tables = [
-        "ITMMASTER",
-        "ITMSALES",
-        "ITMFACILIT",
-        "BPARTNER",
-        "BPCUSTOMER",
-        "BPCUSTMVT",
-        "BPDLVCUST",
-        "SALESREP",
-        "SPRICLINK",
-        "PRICSTRUCT",
-        "SPREASON",
-        "SPRICCONF",
-        "SPRICLIST",
-        "SORDER",
-        "PIMPL",
-        "TABMODELIV",
-        "STOCK",
-        "FACILITY",
-        "SORDER",
-        "BPCARRIER",
-        "COMPANY",
-        "BPDLVCUST",
-        "TABSOHTYP",
-        "TABVACBPR",
-        "SVCRVAT",
-        "ITMCATEG",
-        "CBLOB",
-        "BLOBEXPENSES",
-        "ABLOB",
-        "AUTILIS",
-        "AMENUSER",
-        "TABVAT",
-        "BPADDRESS",
-        "WAREHOUSE",
-        "TABMODELIV",
-        "TABPAYTERM",
-        "TABDEPAGIO",
-        "BPCINVVAT",
-        "TABVAT",
-        "TABRATVAT",
-        "TABVACITM",
-        "TABVAC",
-        "TAXLINK",
-        "SFOOTINV",
-        "SORDERQ",
-        "SORDERP"
-    ]
-
-                    for table in tables:
-                        # print(f" Processing table: SEED.{table}")
-
-                        # --- Get column names ---
-                        sqlserver_cursor.execute(f"SELECT TOP 0 * FROM SEED.{table}")
-                        columns = [col[0] for col in sqlserver_cursor.description]
-
-                        # --- Drop + create SQLite table ---
-                        col_defs = ", ".join([f'"{c}" TEXT' for c in columns])
-                        sqlite_cursor.execute(f"DROP TABLE IF EXISTS {table}")
-                        sqlite_cursor.execute(f"CREATE TABLE {table} ({col_defs})")
-
-                        # --- Fetch all rows from SQL Server ---
-                        sqlserver_cursor.execute(f"SELECT * FROM SEED.{table}")
-                        rows = sqlserver_cursor.fetchall()
-
-                        # --- Convert Decimal to float/str for SQLite ---
-                        def convert_row(row):
-                            return [float(x) if isinstance(x, Decimal) else x for x in row]
-
-                        converted_rows = [convert_row(r) for r in rows]
-
-                        # --- Insert into SQLite ---
-                        placeholders = ", ".join(["?"] * len(columns))
-                        insert_sql = f"INSERT INTO {table} VALUES ({placeholders})"
-                        sqlite_cursor.executemany(insert_sql, converted_rows)
-                        sqlite_conn.commit()
-
-                        # print(f" {table}: {len(rows)} rows copied.")
-
-                    # --- Close connections ---
-                    sqlserver_conn.close()
-                    sqlite_conn.close()
-
-                    zip_path = db_path_sqlite.replace('.db', '.zip')
-                    try:
-                        # First, remove any old zip files in the directory
-                        zip_dir = os.path.dirname(zip_path)
-                        for old_file in os.listdir(zip_dir):
-                            if old_file.endswith('_sagex3_seed.zip'):
-                                old_zip_path = os.path.join(zip_dir, old_file)
-                                try:
-                                    os.remove(old_zip_path)
-                                except OSError:
-                                    pass
-                        
-                        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                            zipf.write(db_path_sqlite, os.path.basename(db_path_sqlite))
-                        
-                        file_to_send = zip_path
-                        f.write(f"Compressed successfully. Size: {os.path.getsize(zip_path)} bytes.\n")
-                        
-                        # Remove original large file immediately after compression
-                        try:
-                            os.remove(db_path_sqlite)
-                        except OSError:
-                            pass
-                            
-                    except Exception as e:
-                        f.write(f"Error compressing file: {e}\n")
-                        # Fallback to original file if compression fails
-                        file_to_send = db_path_sqlite
-
-                    security = "ssl"
-                    if email_rows[6] is True:
-                        security = "ssl"
-                    elif email_rows[5] is True:
-                        security = "tls"
-                    elif email_rows[5] is True and email_rows[6] is True:
-                        security = "both"
-
-                    attachments_list = [file_to_send] if file_to_send else []
-
-                    if attachments_list:
-                        send_email(
-                            email_receiver="giscardntchinda@gmail.com",
-                            server=email_rows[1],
-                            port=email_rows[4],  # Port fourni par l'utilisateur
-                            email_sender=email_rows[2],
-                            email_password=email_rows[3],
-                            security=security,  # "ssl", "tls", "both" # type: ignore
-                            attachments=attachments_list
-                        )
-                        f.write(f"Email sent successfully with attachment: {file_to_send}\n")
-                    else:
-                        f.write("Skipping email sending because attachment was too large or invalid.\n")
-                    
-                    # Only clean up the original .db file if it still exists
-                    if os.path.exists(db_path_sqlite):
-                        try:
-                            os.remove(db_path_sqlite)
-                        except OSError:
-                            pass
+                    sql_config = {
+                        'username': 'superadmin',
+                        'password': 'MotDePasseFort123!',
+                        'server': '192.168.2.41,1433',
+                        'database': 'x3waza',
+                        'driver': 'ODBC Driver 17 for SQL Server'
+                    }
 
                     f.write(f"Connected to obdc.\n {config_rows} dsn= {config_rows[1]}, username={config_rows[6]}, password={config_rows[7]}, database=x3waza ")
                     f.write(f"Email config: {email_rows}\n")
