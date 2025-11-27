@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 import os
 from pathlib import Path
 import smtplib
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import zipfile
 import win32serviceutil
 import win32service
@@ -41,7 +41,8 @@ class DatabaseSync:
         sql_server_config: Dict[str, str], 
         local_db_path: str = rf"{LOCAL_DB_PATH}\local_data.db",
         zip_folder: str = ZIP_FOLDER,
-        email_config: Optional[Dict[str, str]] = None
+        email_config: Optional[Dict[str, str]] = None,
+        fs: Optional[Any] = None
     ):
         """
         Initialize the sync manager.
@@ -55,6 +56,7 @@ class DatabaseSync:
         self.local_db_path = local_db_path
         self.zip_folder = zip_folder
         self.email_config = email_config
+        self.fs = fs
         
         # Create zip folder if it doesn't exist
         Path(self.zip_folder).mkdir(parents=True, exist_ok=True)
@@ -96,7 +98,8 @@ class DatabaseSync:
                     f"Trusted_Connection=yes"
                 )
         
-        logger.info(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}")
+        if self.fs:
+            self.fs.write(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}")
         return pyodbc.connect(conn_str)
 
     def _get_local_connection(self):
@@ -183,10 +186,12 @@ class DatabaseSync:
         :param schema: Schema name (default: dbo) - IMPORTANT for avoiding duplicate columns
         :return: True if changes were made, False otherwise
         """
-        logger.info(f"[*] Starting sync for table: {schema}.{table_name}")
+        if self.fs:
+            self.fs.write(f"[*] Starting sync for table: {schema}.{table_name}")
         
         last_sync = self.get_last_sync_time(table_name)
-        logger.info(f"    Last sync time: {last_sync}")
+        if self.fs:
+            self.fs.write(f"    Last sync time: {last_sync}")
 
         try:
             sql_conn = self._get_sql_connection()
@@ -201,7 +206,8 @@ class DatabaseSync:
             columns = [(row.COLUMN_NAME, row.DATA_TYPE) for row in sql_cursor.fetchall()]
             
             if not columns:
-                logger.info(f"    Warning: No columns found for {schema}.{table_name}, trying without schema filter...")
+                if self.fs:
+                    self.fs.write(f"    Warning: No columns found for {schema}.{table_name}, trying without schema filter...")
                 sql_cursor.execute(f"""
                     SELECT DISTINCT COLUMN_NAME, DATA_TYPE 
                     FROM INFORMATION_SCHEMA.COLUMNS 
@@ -211,7 +217,8 @@ class DatabaseSync:
                 columns = [(row.COLUMN_NAME, row.DATA_TYPE) for row in sql_cursor.fetchall()]
                 
                 if not columns:
-                    logger.info(f"    Error: Table {table_name} not found in SQL Server.")
+                    if self.fs:
+                        self.fs.write(f"    Error: Table {table_name} not found in SQL Server.")
                     return False
 
             self.ensure_local_table_exists(table_name, columns, pk_column)
@@ -232,11 +239,13 @@ class DatabaseSync:
             rows = sql_cursor.fetchall()
             
             if not rows:
-                logger.info("    No new changes found.")
+                if self.fs:
+                    self.fs.write("    No new changes found.")
                 sql_conn.close()
                 return False
 
-            logger.info(f"    Found {len(rows)} records to update.")
+            if self.fs:
+                self.fs.write(f"    Found {len(rows)} records to update.")
 
             local_conn = self._get_local_connection()
             local_cursor = local_conn.cursor()
@@ -274,11 +283,13 @@ class DatabaseSync:
                 local_conn.commit()
                 
                 self.update_sync_time(table_name, new_max_date)
-                logger.info(f"    Successfully synced. New watermark: {new_max_date}")
+                if self.fs:
+                    self.fs.write(f"    Successfully synced. New watermark: {new_max_date}")
                 
             except Exception as e:
                 local_conn.rollback()
-                logger.info(f"    Error writing to local DB: {e}")
+                if self.fs:
+                    self.fs.write(f"    Error writing to local DB: {e}")
                 raise
             finally:
                 local_conn.close()
@@ -288,16 +299,19 @@ class DatabaseSync:
             return True
 
         except Exception as e:
-            logger.info(f"    Sync failed: {e}")
+            if self.fs:
+                self.fs.write(f"    Sync failed: {e}")
             return False
 
     def create_zip(self) -> str:
         """Creates a zip file of the SQLite database and removes any old zip files."""
-        logger.info(f"[*] Creating zip archive of {self.local_db_path}...")
+        if self.fs:
+            self.fs.write(f"[*] Creating zip archive of {self.local_db_path}...")
         
         for file in Path(self.zip_folder).glob("*.zip"):
             file.unlink()
-            logger.info(f"    Removed old zip: {file}")
+            if self.fs:
+                self.fs.write(f"    Removed old zip: {file}")
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         zip_filename = f"database_backup_{timestamp}.zip"
@@ -306,16 +320,19 @@ class DatabaseSync:
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             zipf.write(self.local_db_path, arcname=os.path.basename(self.local_db_path))
         
-        logger.info(f"    Created zip: {zip_path}")
+        if self.fs:
+            self.fs.write(f"    Created zip: {zip_path}")
         return zip_path
 
     def send_email(self, zip_path: str):
         """Sends the zipped database file via email."""
         if not self.email_config:
-            logger.info("    No email configuration provided, skipping email.")
+            if self.fs:
+                self.fs.write("    No email configuration provided, skipping email.")
             return
         
-        logger.info(f"[*] Sending email to {self.email_config['to_email']}...")
+        if self.fs:
+            self.fs.write(f"[*] Sending email to {self.email_config['to_email']}...")
         
         try:
             msg = MIMEMultipart()
@@ -339,10 +356,12 @@ class DatabaseSync:
                     server.login(self.email_config['smtp_username'], self.email_config['smtp_password'])
                 server.send_message(msg)
             
-            logger.info(f"    Email sent successfully!")
+            if self.fs:
+                self.fs.write(f"    Email sent successfully!")
             
         except Exception as e:
-            logger.error(f"    Error sending email: {e}")
+            if self.fs:
+                self.fs.write(f"    Error sending email: {e}")
 
     def run_sync(self, tables_to_sync: List[tuple]):
         """
@@ -351,9 +370,10 @@ class DatabaseSync:
         :param tables_to_sync: List of tuples (table_name, pk_column, timestamp_column) 
                                or (table_name, pk_column, timestamp_column, schema)
         """
-        logger.info("\n" + "="*50)
-        logger.info(f"Starting sync at {datetime.now()}")
-        logger.info("="*50)
+        if self.fs:
+            self.fs.write("\n" + "="*50)
+            self.fs.write(f"Starting sync at {datetime.now()}")
+            self.fs.write("="*50)
         
         changes_detected = False
         
@@ -368,12 +388,13 @@ class DatabaseSync:
                 changes_detected = True
         
         if changes_detected:
-            logger.info("\n[*] Changes detected! Creating backup and sending email...")
+            if self.fs:
+                self.fs.write("\n[*] Changes detected! Creating backup and sending email...")
             zip_path = self.create_zip()
             self.send_email(zip_path)
         else:
-            logger.info("\n[*] No changes detected. Skipping backup.")
-
+            if self.fs:
+                self.fs.write("\n[*] No changes detected. Skipping backup.")
     def _convert_value_for_sqlite(self, value):
         """
         Convert SQL Server values to SQLite-compatible types.
@@ -498,7 +519,8 @@ class PythonService(win32serviceutil.ServiceFramework):
                         sql_config, 
                         local_db_path=rf"{LOCAL_DB_PATH}\local_data.db",
                         zip_folder=ZIP_FOLDER,
-                        email_config=email_config
+                        email_config=email_config,
+                        fs = f
                     )
 
                     tables_to_sync = [
