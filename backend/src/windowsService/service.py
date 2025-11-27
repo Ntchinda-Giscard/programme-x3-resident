@@ -501,8 +501,6 @@ class PythonService(win32serviceutil.ServiceFramework):
                         email_config=email_config
                     )
 
-                    # Common Sage X3 schemas: "WAZA", "x3", "SEED", etc.
-    # You can find your schema by running: SELECT DISTINCT TABLE_SCHEMA FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'ITMMASTER'
                     tables_to_sync = [
                         ("ITMMASTER", "AUUID_0", "UPDDATTIM_0", "SEED"),
                         ("ITMFACILIT", "AUUID_0", "UPDDATTIM_0", "SEED"),
@@ -551,11 +549,16 @@ class PythonService(win32serviceutil.ServiceFramework):
                         ("SORDERP", "AUUID_0", "UPDDATTIM_0", "SEED")
                     ]
 
+                                        # Common Sage X3 schemas: "WAZA", "x3", "SEED", etc.
+                    # You can find your schema by running: SELECT DISTINCT TABLE_SCHEMA FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'ITMMASTER'
+ 
+                    syncer.run_sync(tables_to_sync)
+                    f.write(f"\nSleeping for 60 seconds... (Press Ctrl+C to stop)")
+                    time.sleep(60)
 
-
+   
                     f.write("Service is running...\n")
-                    # f.write(f"Connected to obdc.\n {config_rows} dsn= {config_rows[1]}, username={config_rows[6]}, password={config_rows[7]}, database=x3waza ")
-                    # f.write(f"Email config: {email_rows}\n")
+
                 except Exception as e:
                     f.write(f"Error in service execution: {e}\n")
 
