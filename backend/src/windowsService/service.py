@@ -525,6 +525,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                     tables_to_sync = [
                         ("ITMMASTER", "AUUID_0", "UPDDATTIM_0", "SEED"),
                         ("ITMFACILIT", "AUUID_0", "UPDDATTIM_0", "SEED"),
+                        ("ITMSALES", "AUUID_0", "UPDDATTIM_0", "SEED"),
                         ("BPARTNER", "AUUID_0", "UPDDATTIM_0", "SEED"),
                         ("BPCUSTOMER", "AUUID_0", "UPDDATTIM_0", "SEED"),
                         ("BPCUSTMVT", "AUUID_0", "UPDDATTIM_0", "SEED"),
@@ -566,7 +567,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                         ("TAXLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
                         ("SFOOTINV", "AUUID_0", "UPDDATTIM_0", "SEED"),
                         ("SORDERQ", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SORDERP", "AUUID_0", "UPDDATTIM_0", "SEED")
+                        ("SORDERP", "AUUID_0", "UPDDATTIM_0", "SEED"),
                     ]
 
                                         # Common Sage X3 schemas: "WAZA", "x3", "SEED", etc.
