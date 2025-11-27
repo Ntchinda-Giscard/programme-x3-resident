@@ -372,7 +372,7 @@ class DatabaseSync:
         if self.fs:
             self.fs.write("\n" + "="*50 )
             self.fs.write(f"Starting sync at {datetime.now()}\n")
-            self.fs.write("="*50 + "\n")
+            self.fs.write("="*50)
         
         changes_detected = False
         
@@ -549,7 +549,6 @@ class PythonService(win32serviceutil.ServiceFramework):
                         ("SVCRVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
                         ("ITMCATEG", "AUUID_0", "UPDDATTIM_0", "SEED"),
                         ("CBLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BLOBEXPENSES", "AUUID_0", "UPDDATTIM_0", "SEED"),
                         ("ABLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
                         ("AUTILIS", "AUUID_0", "UPDDATTIM_0", "SEED"),
                         ("AMENUSER", "AUUID_0", "UPDDATTIM_0", "SEED"),
