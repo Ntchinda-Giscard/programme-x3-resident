@@ -99,7 +99,7 @@ class DatabaseSync:
                 )
         
         if self.fs:
-            self.fs.write(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}")
+            self.fs.write(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}\n")
         return pyodbc.connect(conn_str)
 
     def _get_local_connection(self):
@@ -187,12 +187,11 @@ class DatabaseSync:
         :return: True if changes were made, False otherwise
         """
         if self.fs:
-            self.fs.write(f"[*] Starting sync for table: {schema}.{table_name}")
+            self.fs.write(f"[*] Starting sync for table: {schema}.{table_name}\n")
         
         last_sync = self.get_last_sync_time(table_name)
         if self.fs:
-            self.fs.write(f"    Last sync time: {last_sync}")
-
+            self.fs.write(f"    Last sync time: {last_sync}\n")
         try:
             sql_conn = self._get_sql_connection()
             sql_cursor = sql_conn.cursor()
@@ -218,7 +217,7 @@ class DatabaseSync:
                 
                 if not columns:
                     if self.fs:
-                        self.fs.write(f"    Error: Table {table_name} not found in SQL Server.")
+                        self.fs.write(f"    Error: Table {table_name} not found in SQL Server.\n")
                     return False
 
             self.ensure_local_table_exists(table_name, columns, pk_column)
@@ -240,7 +239,7 @@ class DatabaseSync:
             
             if not rows:
                 if self.fs:
-                    self.fs.write("    No new changes found.")
+                    self.fs.write("    No new changes found.\n")
                 sql_conn.close()
                 return False
 
@@ -284,12 +283,12 @@ class DatabaseSync:
                 
                 self.update_sync_time(table_name, new_max_date)
                 if self.fs:
-                    self.fs.write(f"    Successfully synced. New watermark: {new_max_date}")
+                    self.fs.write(f"    Successfully synced. New watermark: {new_max_date}\n")
                 
             except Exception as e:
                 local_conn.rollback()
                 if self.fs:
-                    self.fs.write(f"    Error writing to local DB: {e}")
+                    self.fs.write(f"    Error writing to local DB: {e}\n")
                 raise
             finally:
                 local_conn.close()
@@ -300,18 +299,18 @@ class DatabaseSync:
 
         except Exception as e:
             if self.fs:
-                self.fs.write(f"    Sync failed: {e}")
+                self.fs.write(f"    Sync failed: {e}\n")
             return False
 
     def create_zip(self) -> str:
         """Creates a zip file of the SQLite database and removes any old zip files."""
         if self.fs:
-            self.fs.write(f"[*] Creating zip archive of {self.local_db_path}...")
+            self.fs.write(f"[*] Creating zip archive of {self.local_db_path}...\n")
         
         for file in Path(self.zip_folder).glob("*.zip"):
             file.unlink()
             if self.fs:
-                self.fs.write(f"    Removed old zip: {file}")
+                self.fs.write(f"    Removed old zip: {file}\n")
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         zip_filename = f"database_backup_{timestamp}.zip"
@@ -321,18 +320,18 @@ class DatabaseSync:
             zipf.write(self.local_db_path, arcname=os.path.basename(self.local_db_path))
         
         if self.fs:
-            self.fs.write(f"    Created zip: {zip_path}")
+            self.fs.write(f"    Created zip: {zip_path}\n")
         return zip_path
 
     def send_email(self, zip_path: str):
         """Sends the zipped database file via email."""
         if not self.email_config:
             if self.fs:
-                self.fs.write("    No email configuration provided, skipping email.")
+                self.fs.write("    No email configuration provided, skipping email.\n")
             return
         
         if self.fs:
-            self.fs.write(f"[*] Sending email to {self.email_config['to_email']}...")
+            self.fs.write(f"[*] Sending email to {self.email_config['to_email']}...\n")
         
         try:
             msg = MIMEMultipart()
@@ -357,11 +356,11 @@ class DatabaseSync:
                 server.send_message(msg)
             
             if self.fs:
-                self.fs.write(f"    Email sent successfully!")
+                self.fs.write(f"    Email sent successfully!\n")
             
         except Exception as e:
             if self.fs:
-                self.fs.write(f"    Error sending email: {e}")
+                self.fs.write(f"    Error sending email: {e}\n")
 
     def run_sync(self, tables_to_sync: List[tuple]):
         """
@@ -371,9 +370,9 @@ class DatabaseSync:
                                or (table_name, pk_column, timestamp_column, schema)
         """
         if self.fs:
-            self.fs.write("\n" + "="*50)
-            self.fs.write(f"Starting sync at {datetime.now()}")
-            self.fs.write("="*50)
+            self.fs.write("\n" + "="*50 )
+            self.fs.write(f"Starting sync at {datetime.now()}\n")
+            self.fs.write("="*50 + "\n")
         
         changes_detected = False
         
@@ -389,12 +388,12 @@ class DatabaseSync:
         
         if changes_detected:
             if self.fs:
-                self.fs.write("\n[*] Changes detected! Creating backup and sending email...")
+                self.fs.write("\n[*] Changes detected! Creating backup and sending email...\n")
             zip_path = self.create_zip()
             self.send_email(zip_path)
         else:
             if self.fs:
-                self.fs.write("\n[*] No changes detected. Skipping backup.")
+                self.fs.write("\n[*] No changes detected. Skipping backup.\n")
     def _convert_value_for_sqlite(self, value):
         """
         Convert SQL Server values to SQLite-compatible types.
