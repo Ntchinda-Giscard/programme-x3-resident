@@ -371,8 +371,8 @@ class DatabaseSync:
         """
         if self.fs:
             self.fs.write("\n" + "="*50 )
-            self.fs.write(f"Starting sync at {datetime.now()}\n")
-            self.fs.write("="*50)
+            self.fs.write(f"Starting sync at {datetime.now()}")
+            self.fs.write("="*50 + "\n")
         
         changes_detected = False
         
