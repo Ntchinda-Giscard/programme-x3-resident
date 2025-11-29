@@ -594,7 +594,6 @@
 #     win32serviceutil.HandleCommandLine(PythonService)
     
 
-
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -603,6 +602,10 @@ from pathlib import Path
 import smtplib
 from typing import Any, Dict, List, Optional
 import zipfile
+import win32serviceutil
+import win32service
+import win32event
+import servicemanager
 import time
 import logging
 import pyodbc
@@ -615,7 +618,8 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s',
     handlers=[
         logging.FileHandler('fastapi.log')
-    ])
+    ]
+)
 logger = logging.getLogger(__name__)
 
 BASE_FOLDER = r"C:\poswaza\temp"
@@ -688,12 +692,30 @@ class DatabaseSync:
         
         if self.fs:
             self.fs.write(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}\n")
-        return pyodbc.connect(conn_str)
+        
+        conn = pyodbc.connect(conn_str, timeout=30)
+        conn.setdecoding(pyodbc.SQL_CHAR, encoding='cp1252')
+        conn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-16le')
+
+        conn.setencoding('utf-8')
+        
+        return conn
 
     def _get_local_connection(self):
-        """Creates a connection to the local SQLite database."""
-        conn = sqlite3.connect(self.local_db_path)
+        """Creates a connection to the local SQLite database with performance optimizations."""
+        conn = sqlite3.connect(self.local_db_path, timeout=30.0)
         conn.row_factory = sqlite3.Row
+        
+        # Enable WAL mode for better concurrency
+        conn.execute("PRAGMA journal_mode=WAL")
+        # Faster writes with NORMAL synchronous mode
+        conn.execute("PRAGMA synchronous=NORMAL")
+        # Increase cache size for better performance
+        conn.execute("PRAGMA cache_size=10000")
+        # Faster writes with IMMEDIATE transactions
+        conn.execute("PRAGMA temp_store=MEMORY")
+        conn.commit()
+        
         return conn
 
     def _init_local_db(self):
@@ -799,6 +821,7 @@ class DatabaseSync:
         Synchronizes a specific table from SQL Server to Local DB.
         
         First sync loads all rows, subsequent syncs only load changed rows
+        Uses BATCH INSERTS instead of row-by-row for 10-100x performance improvement
         
         :param table_name: Name of the table to sync
         :param pk_column: Primary key column name (for upserts)
@@ -880,34 +903,25 @@ class DatabaseSync:
             if self.fs:
                 self.fs.write(f"    Found {len(rows)} records to {'LOAD' if first_sync else 'UPDATE'}.")
 
-            local_conn = self._get_local_connection()
-            local_cursor = local_conn.cursor()
-            
+            converted_rows = []
+            pk_tracking = []
             new_max_date = last_sync
-            local_cursor.execute("BEGIN TRANSACTION")
-            try:
-                for row in rows:
-                    values = self._convert_row_for_sqlite(tuple(row))
-                    
-                    try:
-                        pk_index = unique_col_names.index(pk_column)
-                        pk_value = str(values[pk_index])
-                        self.track_changes(table_name, pk_value, "UPSERT")
-                    except (ValueError, IndexError):
-                        pass
-                    
-                    upsert_sql = f"""
-                        INSERT OR REPLACE INTO "{table_name}" ({cols_str})
-                        VALUES ({placeholders})
-                    """
-                    local_cursor.execute(upsert_sql, values)
-                    
-                    # Find the index of timestamp column
-                    try:
-                        ts_index = unique_col_names.index(timestamp_column)
-                        row_date = values[ts_index]
-                    except (ValueError, IndexError):
-                        row_date = getattr(row, timestamp_column, None)
+            
+            for row in rows:
+                values = self._convert_row_for_sqlite(tuple(row))
+                converted_rows.append(values)
+                
+                # Track primary keys and find max timestamp
+                try:
+                    pk_index = unique_col_names.index(pk_column)
+                    pk_value = str(values[pk_index])
+                    pk_tracking.append((table_name, pk_value, "UPSERT"))
+                except (ValueError, IndexError):
+                    pass
+                
+                try:
+                    ts_index = unique_col_names.index(timestamp_column)
+                    row_date = values[ts_index]
                     
                     if row_date:
                         if isinstance(row_date, str):
@@ -918,7 +932,29 @@ class DatabaseSync:
                         
                         if isinstance(row_date, datetime) and row_date > new_max_date:
                             new_max_date = row_date
+                except (ValueError, IndexError):
+                    pass
 
+            local_conn = self._get_local_connection()
+            local_cursor = local_conn.cursor()
+            
+            try:
+                local_cursor.execute("BEGIN TRANSACTION")
+                
+                # Batch insert all rows at once
+                upsert_sql = f"""
+                    INSERT OR REPLACE INTO "{table_name}" ({cols_str})
+                    VALUES ({placeholders})
+                """
+                local_cursor.executemany(upsert_sql, converted_rows)
+                
+                # Batch insert all change tracking records
+                if pk_tracking:
+                    local_cursor.executemany(
+                        "INSERT INTO sync_changes (table_name, pk_value, change_type, sync_timestamp) VALUES (?, ?, ?, ?)",
+                        [(t[0], t[1], t[2], datetime.now().isoformat()) for t in pk_tracking]
+                    )
+                
                 local_conn.commit()
                 
                 self.update_sync_time(table_name, new_max_date, is_first_sync=False)
@@ -1130,18 +1166,6 @@ class DatabaseSync:
         Convert an entire row tuple to SQLite-compatible values.
         """
         return tuple(self._convert_value_for_sqlite(val) for val in row)
-
-
-import win32serviceutil
-import win32service
-import win32event
-import servicemanager
-import time
-import logging
-import sqlite3
-import os
-from pathlib import Path
-from datetime import datetime
 
 class PythonService(win32serviceutil.ServiceFramework):
     _svc_name_ = "WAZAPOS_TEST"
