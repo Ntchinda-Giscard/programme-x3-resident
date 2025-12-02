@@ -1269,6 +1269,7 @@ class DatabaseSync:
         """
         return tuple(self._convert_value_for_sqlite(val) for val in row)
 
+
 class PythonService(win32serviceutil.ServiceFramework):
     _svc_name_ = "WAZAPOS_TEST"
     _svc_display_name_ = "WAZAPOS_TEST"
