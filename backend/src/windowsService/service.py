@@ -778,7 +778,7 @@ class DatabaseSync:
             cursor.execute("""
                 INSERT OR REPLACE INTO sync_state (table_name, last_sync_timestamp, is_first_sync)
                 VALUES (?, ?, ?)
-            """, (table_name, sync_time.isoformat(), 0))  # Always set to 0 after sync
+            """, (table_name, sync_time.isoformat(), 1))  # Always set to 0 after sync
             conn.commit()
 
     def track_changes(self, table_name: str, pk_value: str, change_type: str):
