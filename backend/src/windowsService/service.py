@@ -763,6 +763,9 @@ class DatabaseSync:
             cursor = conn.cursor()
             cursor.execute("SELECT is_first_sync FROM sync_state WHERE table_name = ?", (table_name,))
             row = cursor.fetchone()
+
+            if self.fs:
+                self.fs.write(f" {row}   is_first_sync check for {table_name}: {row['is_first_sync'] if row else 'No record found'}\n")
             
             if row:
                 return bool(row['is_first_sync'])
