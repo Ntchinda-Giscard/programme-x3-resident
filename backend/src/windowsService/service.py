@@ -181,6 +181,16 @@ class DatabaseSync:
                 sqlite_cur.execute(f"DROP TABLE IF EXISTS {table}")
                 sqlite_cur.execute(f"CREATE TABLE {table} ({columns_def})")
 
+                # Fetch all data
+                rows = sql_cursor.fetchall()
+                placeholders = ", ".join(["?"] * len(columns))
+                insert_query = f"INSERT INTO {table} VALUES ({placeholders})"
+
+                # Insert into SQLite
+                for row in rows:
+                    sqlite_cur.execute(insert_query, tuple(str(x) if x is not None else None for x in row))
+
+
     def get_last_sync_time(self, table_name: str) -> datetime:
         """Retrieves the last successful sync timestamp for a table."""
         with self._get_local_connection() as conn:
