@@ -37,6 +37,7 @@ class DatabaseSync:
     def __init__(
         self, 
         sql_server_config: Dict[str, str],
+        tables_to_sync: List[str],
         local_db_path: str = rf"{LOCAL_DB_PATH}\local_data.db",
         zip_folder: str = ZIP_FOLDER,
         email_config: Optional[Dict[str, str]] = None,
@@ -55,6 +56,7 @@ class DatabaseSync:
         self.zip_folder = zip_folder
         self.email_config = email_config
         self.fs = fs
+        self.tables_to_sync = tables_to_sync
         
         # Create folders if they don't exist
         Path(self.zip_folder).mkdir(parents=True, exist_ok=True)
@@ -65,7 +67,7 @@ class DatabaseSync:
         # self._init_local_db()
         
         #  Initialize first launch flag
-        self._init_first_launch()
+        self._export_tables_db(self.tables_to_sync)
 
     def _get_sql_connection(self):
         """Creates a connection to the remote SQL Server using DSN or Windows Auth."""
@@ -761,105 +763,109 @@ class PythonService(win32serviceutil.ServiceFramework):
         os.makedirs(ZIP_FOLDER, exist_ok=True)
         os.makedirs(log_folder, exist_ok=True)
         
+        
+        tables_to_sync = [
+                        "ITMMASTER",
+                        "ITMFACILIT",
+                        "ITMSALES",
+                        "BPARTNER",
+                        "BPCUSTOMER",
+                        "BPCUSTMVT",
+                        "BPDLVCUST",
+                        "SALESREP",
+                        "SPRICLINK",
+                        "PRICSTRUCT",
+                        "SPREASON",
+                        "SPRICCONF",
+                        "SPRICLIST",
+                        "SORDER",
+                        "PIMPL",
+                        "TABMODELIV",
+                        "STOCK",
+                        "FACILITY",
+                        "BPCARRIER",
+                        "COMPANY",
+                        "TABSOHTYP",
+                        "TABVACBPR",
+                        "SVCRVAT",
+                        "ITMCATEG",
+                        "CBLOB",
+                        "ABLOB",
+                        "AUTILIS",
+                        "AMENUSER",
+                        "TABVAT",
+                        "BPADDRESS",
+                        "WAREHOUSE",
+                        "TABPAYTERM",
+                        "TABDEPAGIO",
+                        "BPCINVVAT",
+                        "TABRATVAT",
+                        "TABVACITM",
+                        "TABVAC",
+                        "TAXLINK",
+                        "SFOOTINV",
+                        "SORDERQ",
+                        "SORDERP"
+                    ]
+        
+        
+        with open(rf"{log_folder}\service_log.txt", "a") as f:
+            try:
+                db_path = rf"{LOCAL_DB_PATH}\config.db"
+                config_conn = sqlite3.connect(db_path)
+                config_cursor = config_conn.cursor()
+                config_cursor.execute("SELECT * FROM database_configuration")
+                config_rows = config_cursor.fetchone()
+                config_conn.close()
+                
+                sql_config = {
+                    'username': config_rows[7],
+                    'password': config_rows[8],
+                    'server': f"{config_rows[3]},{config_rows[4]}",
+                    'database': config_rows[5],
+                    'driver': 'ODBC Driver 17 for SQL Server',
+                    'dsn': config_rows[1]
+                }
+                            
+                # Get folder configuration
+                folder_conn = sqlite3.connect(db_path)
+                folder_cursor = folder_conn.cursor()
+                folder_cursor.execute("SELECT * FROM configurations_folders")
+                folder_rows = folder_cursor.fetchone()
+                folder_conn.close()
+                            
+                # Get email configuration
+                email_conn = sqlite3.connect(db_path)
+                email_cursor = email_conn.cursor()
+                email_cursor.execute("SELECT * FROM email_configs")
+                email_rows = email_cursor.fetchone()
+                email_conn.close()
+                            
+                email_config = {
+                    'smtp_server': email_rows[1],
+                    'smtp_port': email_rows[4],
+                    'smtp_username': email_rows[2],
+                    'smtp_password': email_rows[3],
+                    'from_email': email_rows[2],
+                    'to_email': email_rows[5],
+                    'subject': 'Database Sync Update'
+                }
+        
+                syncer = DatabaseSync(
+                            sql_config,
+                            tables_to_sync=tables_to_sync,
+                            local_db_path=rf"{LOCAL_DB_PATH}\local_data.db",
+                            zip_folder=ZIP_FOLDER,
+                            email_config=email_config,
+                            fs=f
+                        )
+            except Exception as e:
+                    f.write(f"Error in service execution: {e}\n")
         while self.running:
             with open(rf"{log_folder}\service_log.txt", "a") as f:
                 try:
                     f.write(f"\n--- Sync run at {datetime.now()} ---\n")
-                    
-                    db_path = rf"{LOCAL_DB_PATH}\config.db"
-                    config_conn = sqlite3.connect(db_path)
-                    config_cursor = config_conn.cursor()
-                    config_cursor.execute("SELECT * FROM database_configuration")
-                    config_rows = config_cursor.fetchone()
-                    config_conn.close()
-                    
-                    sql_config = {
-                        'username': config_rows[7],
-                        'password': config_rows[8],
-                        'server': f"{config_rows[3]},{config_rows[4]}",
-                        'database': config_rows[5],
-                        'driver': 'ODBC Driver 17 for SQL Server',
-                        'dsn': config_rows[1]
-                    }
-                    
-                    # Get folder configuration
-                    folder_conn = sqlite3.connect(db_path)
-                    folder_cursor = folder_conn.cursor()
-                    folder_cursor.execute("SELECT * FROM configurations_folders")
-                    folder_rows = folder_cursor.fetchone()
-                    folder_conn.close()
-                    
-                    # Get email configuration
-                    email_conn = sqlite3.connect(db_path)
-                    email_cursor = email_conn.cursor()
-                    email_cursor.execute("SELECT * FROM email_configs")
-                    email_rows = email_cursor.fetchone()
-                    email_conn.close()
-                    
-                    email_config = {
-                        'smtp_server': email_rows[1],
-                        'smtp_port': email_rows[4],
-                        'smtp_username': email_rows[2],
-                        'smtp_password': email_rows[3],
-                        'from_email': email_rows[2],
-                        'to_email': email_rows[5],
-                        'subject': 'Database Sync Update'
-                    }
-                    
-                    syncer = DatabaseSync(
-                        sql_config,
-                        local_db_path=rf"{LOCAL_DB_PATH}\local_data.db",
-                        zip_folder=ZIP_FOLDER,
-                        email_config=email_config,
-                        fs=f
-                    )
-                    
-                    tables_to_sync = [
-                        ("ITMMASTER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("ITMFACILIT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("ITMSALES", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPARTNER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPCUSTOMER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPCUSTMVT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPDLVCUST", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SALESREP", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SPRICLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("PRICSTRUCT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SPREASON", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SPRICCONF", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SPRICLIST", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SORDER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("PIMPL", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABMODELIV", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("STOCK", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("FACILITY", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPCARRIER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("COMPANY", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABSOHTYP", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABVACBPR", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SVCRVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("ITMCATEG", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("CBLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("ABLOB", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("AUTILIS", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("AMENUSER", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPADDRESS", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("WAREHOUSE", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABPAYTERM", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABDEPAGIO", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("BPCINVVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABRATVAT", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABVACITM", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TABVAC", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("TAXLINK", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SFOOTINV", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SORDERQ", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                        ("SORDERP", "AUUID_0", "UPDDATTIM_0", "SEED"),
-                    ]
-                    
-                    syncer.run_sync(tables_to_sync)
-                    
+                                        
                     f.write(f"Next sync in 60 seconds...\n")
                     time.sleep(60)
                     
