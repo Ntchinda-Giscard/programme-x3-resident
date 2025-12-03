@@ -1,3 +1,4 @@
+from calendar import c
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -160,7 +161,7 @@ class DatabaseSync:
         with self._get_local_connection() as conn:
             cursor = conn.cursor()
 
-    def export_tables_db(self, tables: List[str]):
+    def _export_tables_db(self, tables: List[str]):
         sqlite_path = self.local_db_path
         sqlite_conn = sqlite3.connect(sqlite_path)
         sqlite_cur = sqlite_conn.cursor()
@@ -189,6 +190,17 @@ class DatabaseSync:
                 # Insert into SQLite
                 for row in rows:
                     sqlite_cur.execute(insert_query, tuple(str(x) if x is not None else None for x in row))
+
+            sqlite_conn.commit()
+
+            if self.fs:
+                self.fs.write(f"[*] Export completed. Local DB path: {sqlite_path}\n")
+        
+        if self.fs:
+            self.fs.write(f"[*] Exported tables to local DB at {sqlite_path}\n")
+        
+        sqlite_conn.close()
+        conn.close()
 
 
     def get_last_sync_time(self, table_name: str) -> datetime:
