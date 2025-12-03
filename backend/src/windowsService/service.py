@@ -38,9 +38,9 @@ class DatabaseSync:
         self, 
         sql_server_config: Dict[str, str],
         tables_to_sync: List[str],
+        email_config: Optional[Dict[str, str]],
         local_db_path: str = rf"{LOCAL_DB_PATH}\local_data.db",
         zip_folder: str = ZIP_FOLDER,
-        email_config: Optional[Dict[str, str]] = None,
         fs: Optional[Any] = None
     ):
         """
@@ -174,9 +174,11 @@ class DatabaseSync:
             for table in tables:
                 if self.fs:
                     self.fs.write(f"[*] Exporting table {table} to local DB...\n")
+                
+                full_table = f"{self.email_config['schema']}.{table}" # type: ignore
 
                 # Fetch column definitions from SQL Server
-                sql_cursor.execute(f'SELECT * FROM "{table}"')
+                sql_cursor.execute(f'SELECT * FROM "{full_table}"')
                 columns = [column[0] for column in sql_cursor.description]
 
                 # Create table in SQLite
@@ -824,7 +826,8 @@ class PythonService(win32serviceutil.ServiceFramework):
                     'server': f"{config_rows[3]},{config_rows[4]}",
                     'database': config_rows[5],
                     'driver': 'ODBC Driver 17 for SQL Server',
-                    'dsn': config_rows[1]
+                    'dsn': config_rows[1],
+                    'schema': config_rows[6]
                 }
                             
                 # Get folder configuration
