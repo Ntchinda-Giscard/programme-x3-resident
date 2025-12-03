@@ -156,6 +156,16 @@ class DatabaseSync:
 
         if self.fs:
             self.fs.write("[*] Initializing first launch flag in local DB...\n")
+        
+        with self._get_local_connection() as conn:
+            cursor = conn.cursor()
+
+    def export_tables_db(self, table_names: List[str]):
+        sqlite_path = self.local_db_path
+        sqlite_conn = sqlite3.connect(sqlite_path)
+        sqlite_cur = sqlite_conn.cursor()
+        with self._get_local_connection() as conn:
+            cursor = conn.cursor()
 
     def get_last_sync_time(self, table_name: str) -> datetime:
         """Retrieves the last successful sync timestamp for a table."""
