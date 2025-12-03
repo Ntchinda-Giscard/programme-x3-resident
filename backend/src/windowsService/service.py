@@ -171,7 +171,15 @@ class DatabaseSync:
             for table in tables:
                 if self.fs:
                     self.fs.write(f"[*] Exporting table {table} to local DB...\n")
+
+                # Fetch column definitions from SQL Server
                 sql_cursor.execute(f'SELECT * FROM "{table}"')
+                columns = [column[0] for column in sql_cursor.description]
+
+                # Create table in SQLite
+                columns_def = ", ".join([f'"{col}" TEXT' for col in columns])  # TEXT default
+                sqlite_cur.execute(f"DROP TABLE IF EXISTS {table}")
+                sqlite_cur.execute(f"CREATE TABLE {table} ({columns_def})")
 
     def get_last_sync_time(self, table_name: str) -> datetime:
         """Retrieves the last successful sync timestamp for a table."""
