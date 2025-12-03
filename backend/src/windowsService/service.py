@@ -160,12 +160,18 @@ class DatabaseSync:
         with self._get_local_connection() as conn:
             cursor = conn.cursor()
 
-    def export_tables_db(self, table_names: List[str]):
+    def export_tables_db(self, tables: List[str]):
         sqlite_path = self.local_db_path
         sqlite_conn = sqlite3.connect(sqlite_path)
         sqlite_cur = sqlite_conn.cursor()
+
         with self._get_local_connection() as conn:
-            cursor = conn.cursor()
+            sql_cursor = conn.cursor()
+
+            for table in tables:
+                if self.fs:
+                    self.fs.write(f"[*] Exporting table {table} to local DB...\n")
+                sql_cursor.execute(f'SELECT * FROM "{table}"')
 
     def get_last_sync_time(self, table_name: str) -> datetime:
         """Retrieves the last successful sync timestamp for a table."""
