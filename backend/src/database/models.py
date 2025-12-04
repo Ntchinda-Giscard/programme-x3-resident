@@ -2,6 +2,16 @@ from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from src.database.session import Base
 
+
+
+class Settings(Base):
+    __tablename__ = "settings"
+    id = Column(Integer, primary_key=True, index=True)
+    
+
+
+
+
 class ConfigurationsFolders(Base):
     __tablename__ = "configurations_folders"
     id = Column(Integer, primary_key=True, index=True)

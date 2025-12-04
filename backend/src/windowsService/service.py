@@ -39,7 +39,8 @@ class DatabaseSync:
         sql_server_config: Dict[str, str],
         tables_to_sync: List[str],
         email_config: Optional[Dict[str, str]],
-        local_db_path: str = rf"{LOCAL_DB_PATH}\local_data.db",
+        parameters: Optional[Dict[str, Any]],
+        local_db_path: str,
         zip_folder: str = ZIP_FOLDER,
         fs: Optional[Any] = None
     ):
@@ -52,7 +53,7 @@ class DatabaseSync:
         :param email_config: Optional email configuration for sending the zip file
         """
         self.sql_config = sql_server_config
-        self.local_db_path = local_db_path
+        self.parameters = parameters
         self.zip_folder = zip_folder
         self.email_config = email_config
         self.fs = fs
@@ -67,7 +68,7 @@ class DatabaseSync:
         # self._init_local_db()
         
         #  Initialize first launch flag
-        self._export_tables_db(self.tables_to_sync)
+        self._init_first_launch(self.tables_to_sync)
 
     def _get_sql_connection(self):
         """Creates a connection to the remote SQL Server using DSN or Windows Auth."""
@@ -113,491 +114,73 @@ class DatabaseSync:
         
         return conn
 
-    def _get_local_connection(self):
-        """Creates a connection to the local SQLite database with performance optimizations."""
-        conn = sqlite3.connect(self.local_db_path, timeout=30.0)
-        conn.row_factory = sqlite3.Row
-        
-        # Set text_factory to handle potential encoding issues
-        conn.text_factory = lambda x: x.decode('latin-1', errors='replace') if isinstance(x, bytes) else x
-        
-        # Enable WAL mode for better concurrency
-        conn.execute("PRAGMA journal_mode=WAL")
-        # Faster writes with NORMAL synchronous mode
-        conn.execute("PRAGMA synchronous=NORMAL")
-        # Increase cache size for better performance
-        conn.execute("PRAGMA cache_size=10000")
-        # Faster writes with IMMEDIATE transactions
-        conn.execute("PRAGMA temp_store=MEMORY")
-        conn.commit()
-        
-        return conn
 
-    def _init_local_db(self):
-        """Creates necessary metadata tables in local DB if they don't exist."""
-        with self._get_local_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS sync_state (
-                    table_name TEXT PRIMARY KEY,
-                    last_sync_timestamp DATETIME,
-                    is_first_sync INTEGER DEFAULT 1
-                )
-            """)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS sync_changes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    table_name TEXT,
-                    pk_value TEXT,
-                    change_type TEXT,
-                    sync_timestamp DATETIME
-                )
-            """)
-            conn.commit()
 
-    def _init_first_launch(self):
 
-        if self.fs:
-            self.fs.write("[*] Initializing first launch flag in local DB...\n")
-        
-        with self._get_local_connection() as conn:
-            cursor = conn.cursor()
 
-    def _export_tables_db(self, tables: List[str]):
-        sqlite_path = self.local_db_path
-        sqlite_conn = sqlite3.connect(sqlite_path)
-        sqlite_cur = sqlite_conn.cursor()
+    def _init_first_launch(self, tables: List[str]):
 
-        with self._get_local_connection() as conn:
-            sql_cursor = conn.cursor()
+        for site in self.parameters["sites"]: # type: ignore
+            if self.fs:
+                self.fs.write(f"[*] Exporting tables for site: {site}\n")
+            self.ensure_folder(rf"{LOCAL_DB_PATH}\{site}")
+            sqlite_path = rf"{LOCAL_DB_PATH}\{site}\local_data.db"
+            sqlite_conn = sqlite3.connect(sqlite_path)
+            sqlite_cur = sqlite_conn.cursor()
 
-            for table in tables:
-                if self.fs:
-                    self.fs.write(f"[*] Exporting table {table} to local DB...\n")
+            with self._get_sql_connection() as conn:
+                sql_cursor = conn.cursor()
                 
-                full_table = f"{self.email_config['schema']}.{table}" # type: ignore
+                for table in tables:
+                    # Determine full table name based on site dependency
+                    full_table = f"{self.sql_config['schema']}.{table}" # type: ignore
 
-                # Fetch column definitions from SQL Server
-                sql_cursor.execute(f'SELECT * FROM "{full_table}"')
-                columns = [column[0] for column in sql_cursor.description]
+                    if table in self.parameters["site_dependent_tables"]: # type: ignore
+                        if self.fs:
+                            self.fs.write(f"[*] Exporting site-dependent table {table} for site {site} to local DB...\n")
+                        
+                        query = f"SELECT * FROM {full_table} WHERE site_code = ?"
+                        sql_cursor.execute(query, (site,))
+                        
+                    elif table in self.parameters["all_tables"]: # type: ignore
+                        if self.fs:
+                            self.fs.write(f"[*] Exporting table {table} to local DB...\n")
 
-                # Create table in SQLite
-                columns_def = ", ".join([f'"{col}" TEXT' for col in columns])  # TEXT default
-                sqlite_cur.execute(f"DROP TABLE IF EXISTS {table}")
-                sqlite_cur.execute(f"CREATE TABLE {table} ({columns_def})")
-
-                # Fetch all data
-                rows = sql_cursor.fetchall()
-                placeholders = ", ".join(["?"] * len(columns))
-                insert_query = f"INSERT INTO {table} VALUES ({placeholders})"
-
-                # Insert into SQLite
-                for row in rows:
-                    sqlite_cur.execute(insert_query, tuple(str(x) if x is not None else None for x in row))
-
-            sqlite_conn.commit()
-
-            if self.fs:
-                self.fs.write(f"[*] Export completed. Local DB path: {sqlite_path}\n")
-        
-        if self.fs:
-            self.fs.write(f"[*] Exported tables to local DB at {sqlite_path}\n")
-        
-        sqlite_conn.close()
-        conn.close()
-
-
-    def get_last_sync_time(self, table_name: str) -> datetime:
-        """Retrieves the last successful sync timestamp for a table."""
-        with self._get_local_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT last_sync_timestamp FROM sync_state WHERE table_name = ?", (table_name,))
-            row = cursor.fetchone()
-            
-            if row and row['last_sync_timestamp']:
-                return datetime.fromisoformat(row['last_sync_timestamp'])
-            
-            return datetime.min
-
-    def is_first_sync(self, table_name: str) -> bool:
-        """Check if this is the first sync for the table."""
-        with self._get_local_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT is_first_sync FROM sync_state WHERE table_name = ?", (table_name,))
-            row = cursor.fetchone()
-            
-            if row:
-                return bool(row['is_first_sync'])
-            return True  # Default to first sync if no record exists
-
-    def update_sync_time(self, table_name: str, sync_time: datetime, is_first_sync: bool = False):
-        """Updates the last sync timestamp and first_sync status."""
-        with self._get_local_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT OR REPLACE INTO sync_state (table_name, last_sync_timestamp, is_first_sync)
-                VALUES (?, ?, ?)
-            """, (table_name, sync_time.isoformat(), 0))  # Always set to 0 after sync
-            conn.commit()
-
-    def track_changes(self, table_name: str, pk_value: str, change_type: str):
-        """Track which rows were changed for delta export."""
-        with self._get_local_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO sync_changes (table_name, pk_value, change_type, sync_timestamp)
-                VALUES (?, ?, ?, ?)
-            """, (table_name, pk_value, change_type, datetime.now().isoformat()))
-            conn.commit()
-
-    def clear_change_tracking(self):
-        """Clear all tracked changes after successful email send."""
-        with self._get_local_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM sync_changes")
-            conn.commit()
-            if self.fs:
-                self.fs.write("    Cleared change tracking table.\n")
-
-    def ensure_local_table_exists(self, table_name: str, columns: List[tuple], pk_column: str):
-        """
-        Creates the local table if it doesn't exist, matching the source schema.
-        
-        :param table_name: Name of the table
-        :param columns: List of (column_name, data_type) tuples
-        :param pk_column: The actual primary key column name to use
-        """
-        seen_columns = set()
-        unique_columns = []
-        for col_name, data_type in columns:
-            if col_name not in seen_columns:
-                seen_columns.add(col_name)
-                unique_columns.append((col_name, data_type))
-        
-        col_defs = []
-        for col_name, data_type in unique_columns:
-            if 'int' in data_type.lower():
-                sqlite_type = 'INTEGER'
-            elif 'char' in data_type.lower() or 'text' in data_type.lower() or 'date' in data_type.lower():
-                sqlite_type = 'TEXT'
-            elif 'decimal' in data_type.lower() or 'float' in data_type.lower() or 'money' in data_type.lower():
-                sqlite_type = 'REAL'
-            else:
-                sqlite_type = 'TEXT'
-            
-            col_defs.append(f'"{col_name}" {sqlite_type}')
-
-        create_sql = f'CREATE TABLE IF NOT EXISTS "{table_name}" ({", ".join(col_defs)}, PRIMARY KEY ("{pk_column}"))'
-        
-        with self._get_local_connection() as conn:
-            conn.execute(create_sql)
-
-    def sync_table(self, table_name: str, pk_column: str, timestamp_column: str, schema: str = "dbo") -> bool:
-        """
-        Synchronizes a specific table from SQL Server to Local DB.
-        
-        ALWAYS does UPSERT (INSERT OR REPLACE) - never recreates the table
-        First sync loads all rows, subsequent syncs only load changed rows
-        Uses BATCH INSERTS for 10-100x performance improvement
-        
-        :param table_name: Name of the table to sync
-        :param pk_column: Primary key column name (for upserts)
-        :param timestamp_column: Column used to track changes (e.g., UpdatedAt, ModifiedDate)
-        :param schema: Schema name (default: dbo)
-        :return: True if changes were made, False otherwise
-        """
-        if self.fs:
-            self.fs.write(f"[*] Starting sync for table: {schema}.{table_name}\n")
-        
-        first_sync = self.is_first_sync(table_name)
-        last_sync = self.get_last_sync_time(table_name)
-        
-        if first_sync:
-            if self.fs:
-                self.fs.write(f"    FIRST LOAD - Fetching ALL rows from {schema}.{table_name}\n")
-        else:
-            if self.fs:
-                self.fs.write(f"    Delta sync. Last sync time: {last_sync}\n")
-
-        try:
-            sql_conn = self._get_sql_connection()
-            sql_cursor = sql_conn.cursor()
-            sql_cursor.execute(f"""
-                SELECT COLUMN_NAME, DATA_TYPE
-                 FROM INFORMATION_SCHEMA.COLUMNS
-                 WHERE TABLE_NAME = ? AND TABLE_SCHEMA = ?
-                ORDER BY ORDINAL_POSITION
-            """, (table_name, schema))
-            columns = [(row.COLUMN_NAME, row.DATA_TYPE) for row in sql_cursor.fetchall()]
-            
-            if not columns:
-                if self.fs:
-                    self.fs.write(f"    Warning: No columns found for {schema}.{table_name}, trying without schema filter...\n")
-                sql_cursor.execute(f"""
-                    SELECT DISTINCT COLUMN_NAME, DATA_TYPE
-                     FROM INFORMATION_SCHEMA.COLUMNS
-                     WHERE TABLE_NAME = ?
-                    ORDER BY COLUMN_NAME
-                """, (table_name,))
-                columns = [(row.COLUMN_NAME, row.DATA_TYPE) for row in sql_cursor.fetchall()]
-                
-                if not columns:
-                    if self.fs:
-                        self.fs.write(f"    Error: Table {table_name} not found in SQL Server.\n")
-                    return False
-
-            self.ensure_local_table_exists(table_name, columns, pk_column)
-            
-            seen = set()
-            unique_col_names = []
-            for c in columns:
-                if c[0] not in seen:
-                    seen.add(c[0])
-                    unique_col_names.append(c[0])
-            
-            placeholders = ','.join(['?' for _ in unique_col_names])
-            cols_str = ','.join([f'"{c}"' for c in unique_col_names])
-            
-            if first_sync:
-                query = f'SELECT {cols_str} FROM "{schema}"."{table_name}"'
-                if self.fs:
-                    self.fs.write(f"    Executing FULL LOAD query...\n")
-                sql_cursor.execute(query)
-            else:
-                query = f'SELECT {cols_str} FROM "{schema}"."{table_name}" WHERE "{timestamp_column}" > ?'
-                if self.fs:
-                    self.fs.write(f"    Executing DELTA query...\n")
-                sql_cursor.execute(query, last_sync)
-            
-            rows = sql_cursor.fetchall()
-            
-            if not rows:
-                if self.fs:
-                    self.fs.write("    No new changes found.\n")
-                sql_conn.close()
-                return False
-
-            if self.fs:
-                self.fs.write(f"    Found {len(rows)} records to {'LOAD' if first_sync else 'UPDATE'}.\n")
-
-            converted_rows = []
-            pk_tracking = []
-            new_max_date = last_sync
-            skipped_rows = 0
-            
-            for row in rows:
-                try:
-                    values = self._convert_row_for_sqlite(tuple(row))
-                    converted_rows.append(values)
+                        query = f"SELECT * FROM {full_table}"
+                        sql_cursor.execute(query)
                     
-                    # Track primary keys and find max timestamp
-                    try:
-                        pk_index = unique_col_names.index(pk_column)
-                        pk_value = str(values[pk_index])
-                        pk_tracking.append((table_name, pk_value, "UPSERT"))
-                    except (ValueError, IndexError):
-                        pass
-                    
-                    try:
-                        ts_index = unique_col_names.index(timestamp_column)
-                        row_date = values[ts_index]
-                        
-                        if row_date:
-                            if isinstance(row_date, str):
-                                try:
-                                    row_date = datetime.fromisoformat(row_date)
-                                except ValueError:
-                                    pass
-                            
-                            if isinstance(row_date, datetime) and row_date > new_max_date:
-                                new_max_date = row_date
-                    except (ValueError, IndexError):
-                        pass
-                
-                except (UnicodeDecodeError, UnicodeEncodeError) as e:
-                    skipped_rows += 1
-                    if self.fs:
-                        self.fs.write(f"    Warning: Encoding error in row, skipping: {e}\n")
-                    continue
 
-            if skipped_rows > 0 and self.fs:
-                self.fs.write(f"    Skipped {skipped_rows} rows due to encoding errors.\n")
+                    # Fetch column definitions from SQL Server
+                    columns = [column[0] for column in sql_cursor.description]
 
-            local_conn = self._get_local_connection()
-            local_cursor = local_conn.cursor()
-            
-            try:
-                local_cursor.execute("BEGIN TRANSACTION")
-                
-                # ALWAYS UPSERT - never recreate table
-                upsert_sql = f"""
-                    INSERT OR REPLACE INTO "{table_name}" ({cols_str})
-                    VALUES ({placeholders})
-                """
-                local_cursor.executemany(upsert_sql, converted_rows)
-                
-                # Batch insert all change tracking records
-                if pk_tracking:
-                    local_cursor.executemany(
-                        "INSERT INTO sync_changes (table_name, pk_value, change_type, sync_timestamp) VALUES (?, ?, ?, ?)",
-                        [(t[0], t[1], t[2], datetime.now().isoformat()) for t in pk_tracking]
-                    )
-                
-                local_conn.commit()
-                
-                self.update_sync_time(table_name, new_max_date, is_first_sync=False)
+                    # Create table in SQLite
+                    columns_def = ", ".join([f'"{col}" TEXT' for col in columns])  # TEXT default
+                    sqlite_cur.execute(f"DROP TABLE IF EXISTS {table}")
+                    sqlite_cur.execute(f"CREATE TABLE {table} ({columns_def})")
+
+                    # Fetch all data
+                    rows = sql_cursor.fetchall()
+                    placeholders = ", ".join(["?"] * len(columns))
+                    insert_query = f"INSERT INTO {table} VALUES ({placeholders})"
+
+                    # Insert into SQLite
+                    for row in rows:
+                        sqlite_cur.execute(insert_query, tuple(str(x) if x is not None else None for x in row))
+
+                sqlite_conn.commit()
+
                 if self.fs:
-                    sync_type = "FIRST LOAD (UPSERT)" if first_sync else "Delta sync (UPSERT)"
-                    self.fs.write(f"    Successfully synced ({sync_type}). New watermark: {new_max_date}\n")
-                
-            except Exception as e:
-                local_conn.rollback()
-                if self.fs:
-                    self.fs.write(f"    Error writing to local DB: {e}\n")
-                raise
-            finally:
-                local_conn.close()
+                    self.fs.write(f"[*] Export completed. Local DB path: {sqlite_path}\n")
+            
+            if self.fs:
+                self.fs.write(f"[*] Exported tables to local DB at {sqlite_path}\n")
+            
+            sqlite_conn.close()
+            conn.close()
 
-            sql_conn.close()
-            
-            return True
-        except Exception as e:
-            if self.fs:
-                self.fs.write(f"    Sync failed: {e}\n")
-            return False
-
-    def export_delta_data_with_full_rows(self) -> Optional[str]:
-        """
-        Export only the CHANGED ROWS (full row data) to a CSV file.
-        This retrieves the actual row data from local DB based on tracked changes.
-        """
-        try:
-            with self._get_local_connection() as conn:
-                cursor = conn.cursor()
-                
-                # Get all tracked changes
-                cursor.execute("""
-                    SELECT DISTINCT table_name, pk_value
-                    FROM sync_changes
-                    ORDER BY table_name
-                """)
-                changes = cursor.fetchall()
-                
-                if not changes:
-                    if self.fs:
-                        self.fs.write("    No changes to export.\n")
-                    return None
-                
-                # Group changes by table
-                table_changes = {}
-                for change in changes:
-                    table = change['table_name']
-                    pk = change['pk_value']
-                    if table not in table_changes:
-                        table_changes[table] = []
-                    table_changes[table].append(pk)
-                
-                # Create CSV file with FULL ROW DATA
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                delta_file = os.path.join(DELTA_FOLDER, f"delta_records_{timestamp}.csv")
-                
-                with open(delta_file, 'w', encoding='utf-8', newline='') as f:
-                    writer = None
-                    current_table = None
-                    
-                    for table_name, pk_values in table_changes.items():
-                        # Get column names for this table
-                        cursor.execute(f'PRAGMA table_info("{table_name}")')
-                        columns_info = cursor.fetchall()
-                        column_names = [col[1] for col in columns_info]  # col[1] is the column name
-                        pk_column = column_names[0]  # Default to first column
-                        
-                        # Find actual PK column
-                        for col in columns_info:
-                            if col[5] == 1:  # col[5] is pk flag
-                                pk_column = col[1]
-                                break
-                        
-                        # Fetch actual rows for these primary keys
-                        placeholders = ','.join(['?' for _ in pk_values])
-                        query = f'SELECT * FROM "{table_name}" WHERE "{pk_column}" IN ({placeholders})'
-                        cursor.execute(query, pk_values)
-                        rows = cursor.fetchall()
-                        
-                        if not rows:
-                            continue
-                        
-                        # Write table header and data
-                        if current_table != table_name:
-                            if current_table is not None:
-                                f.write('\n')  # Separator between tables
-                            f.write(f"TABLE: {table_name}\n")
-                            # Write column headers
-                            f.write(','.join(column_names) + '\n')
-                            current_table = table_name
-                        
-                        # Write actual row data
-                        for row in rows:
-                            row_data = [str(val) if val is not None else '' for val in row]
-                            f.write(','.join(row_data) + '\n')
-                
-                if self.fs:
-                    self.fs.write(f"    Delta records (full rows) exported to: {delta_file}\n")
-                    self.fs.write(f"    Total tables with changes: {len(table_changes)}\n")
-                
-                return delta_file
-        except Exception as e:
-            if self.fs:
-                self.fs.write(f"    Error exporting delta data: {e}\n")
-            return None
-
-    def create_zip(self, is_first_sync: bool) -> Optional[str]:
-        """
-        Creates a zip file:
-        - First sync: Full database (local_data.db)
-        - Delta sync: Only changed records (CSV with full row data)
-        
-        :param is_first_sync: Whether this is a first-time full load
-        """
-        if self.fs:
-            sync_type = "FIRST LOAD" if is_first_sync else "DELTA"
-            self.fs.write(f"[*] Creating {sync_type} zip archive...\n")
-        
-        # Remove old zip files
-        for file in Path(self.zip_folder).glob("*.zip"):
-            file.unlink()
-            if self.fs:
-                self.fs.write(f"    Removed old zip: {file}\n")
-        
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        if is_first_sync:
-            zip_filename = f"database_full_{timestamp}.zip"
-            zip_path = os.path.join(self.zip_folder, zip_filename)
-            
-            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                zipf.write(self.local_db_path, arcname=os.path.basename(self.local_db_path))
-            
-            if self.fs:
-                self.fs.write(f"    Created FULL database zip: {zip_path}\n")
-        else:
-            # Export FULL ROW DATA for changed records only
-            delta_file = self.export_delta_data_with_full_rows()
-            if not delta_file:
-                if self.fs:
-                    self.fs.write("    No delta file to zip.\n")
-                return None
-            
-            zip_filename = f"database_delta_{timestamp}.zip"
-            zip_path = os.path.join(self.zip_folder, zip_filename)
-            
-            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                zipf.write(delta_file, arcname=os.path.basename(delta_file))
-            
-            if self.fs:
-                self.fs.write(f"    Created DELTA zip with full row data: {zip_path}\n")
-
-        return zip_path
+    def ensure_folder(self, path):
+        os.makedirs(path, exist_ok=True)
+        return path
 
     def send_email(self, zip_path: str, is_first_sync: bool):
         """
@@ -658,83 +241,10 @@ class DatabaseSync:
         :param tables_to_sync: List of tuples (table_name, pk_column, timestamp_column)
                                 or (table_name, pk_column, timestamp_column, schema)
         """
+        
         if self.fs:
-            self.fs.write("\n" + "="*50 + "\n")
-            self.fs.write(f"Starting sync at {datetime.now()}\n")
-            self.fs.write("="*50 + "\n")
-        
-        changes_detected = False
-        first_sync_with_data = False
-        
-        for table_info in tables_to_sync:
-            if len(table_info) == 4:
-                table, pk, time_col, schema = table_info
-            else:
-                table, pk, time_col = table_info
-                schema = "dbo"
-            
-            was_first_sync = self.is_first_sync(table)
-            had_changes = self.sync_table(table, pk, time_col, schema)
-            
-            # Only consider it "first sync" if the table actually had data
-            if was_first_sync and had_changes:
-                first_sync_with_data = True
-            
-            if had_changes:
-                changes_detected = True
-        
-        if changes_detected:
-            if self.fs:
-                sync_label = "FIRST LOAD" if first_sync_with_data else "DELTA"
-                self.fs.write(f"\n[*] Changes detected! Creating {sync_label} backup and sending email...\n")
-            
-            zip_path = self.create_zip(is_first_sync=first_sync_with_data)
-            if zip_path:
-                self.send_email(zip_path, is_first_sync=first_sync_with_data)
-                # Only clear tracking after DELTA sync, not after first load
-                if not first_sync_with_data:
-                    self.clear_change_tracking()
-        else:
-            if self.fs:
-                self.fs.write("\n[*] No changes detected. Skipping backup.\n")
+            self.fs.write("\n[*] No changes detected. Skipping backup.\n")
 
-    def _convert_value_for_sqlite(self, value):
-        """
-        Convert SQL Server values to SQLite-compatible types.
-        Handles decimal.Decimal, datetime, and other unsupported types.
-        Includes robust encoding handling for text data.
-        """
-        if value is None:
-            return None
-        elif isinstance(value, Decimal):
-            return float(value)
-        elif isinstance(value, datetime):
-            return value.isoformat()
-        elif isinstance(value, bytes):
-            # Try multiple encodings for byte data
-            try:
-                return value.decode('utf-8')
-            except UnicodeDecodeError:
-                try:
-                    return value.decode('latin-1')
-                except UnicodeDecodeError:
-                    try:
-                        return value.decode('cp1252', errors='replace')
-                    except:
-                        return value.decode('ascii', errors='replace')
-        elif isinstance(value, str):
-            # Ensure string is properly encoded
-            return value
-        elif isinstance(value, (int, float)):
-            return value
-        else:
-            return str(value)
-
-    def _convert_row_for_sqlite(self, row):
-        """
-        Convert an entire row tuple to SQLite-compatible values.
-        """
-        return tuple(self._convert_value_for_sqlite(val) for val in row)
 
 class PythonService(win32serviceutil.ServiceFramework):
     _svc_name_ = "WAZAPOS_TEST"
@@ -768,7 +278,6 @@ class PythonService(win32serviceutil.ServiceFramework):
         
         tables_to_sync = [
                         "ITMMASTER",
-                        "ITMFACILIT",
                         "ITMSALES",
                         "BPARTNER",
                         "BPCUSTOMER",
@@ -784,7 +293,6 @@ class PythonService(win32serviceutil.ServiceFramework):
                         "PIMPL",
                         "TABMODELIV",
                         "STOCK",
-                        "FACILITY",
                         "BPCARRIER",
                         "COMPANY",
                         "TABSOHTYP",
@@ -853,13 +361,19 @@ class PythonService(win32serviceutil.ServiceFramework):
                     'to_email': email_rows[5],
                     'subject': 'Database Sync Update'
                 }
+                parameters = {
+                        "sites": ["AE011", "AE012"],
+                        "site_dependent_tables": ["ITMFACILIT", "FACILITY"],
+                        "all_tables": tables_to_sync
+                    }
         
                 syncer = DatabaseSync(
                             sql_config,
                             tables_to_sync=tables_to_sync,
-                            local_db_path=rf"{LOCAL_DB_PATH}\local_data.db",
+                            local_db_path=rf"{LOCAL_DB_PATH}",
                             zip_folder=ZIP_FOLDER,
                             email_config=email_config,
+                            parameters = parameters,
                             fs=f
                         )
             except Exception as e:
