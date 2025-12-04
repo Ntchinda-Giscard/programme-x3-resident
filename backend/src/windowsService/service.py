@@ -364,7 +364,8 @@ class PythonService(win32serviceutil.ServiceFramework):
                 }
                 parameters = {
                         "sites": ["AE011", "AE012"],
-                        "site_dependent_tables": [("ITMFACILIT", "STOFCY_0"), ("FACILITY", "FCY_0")],
+                        "site_dependent_tables": ["ITMFACILIT","FACILITY"],
+                        "keys_columns": ["STOFCY_0", "FCY_0"],
                         "all_tables": tables_to_sync
                     }
         
