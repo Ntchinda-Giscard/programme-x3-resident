@@ -139,7 +139,7 @@ class DatabaseSync:
                         if self.fs:
                             self.fs.write(f"[*] Exporting site-dependent table {table} for site {site} to local DB...\n")
                         
-                        query = f"SELECT * FROM {full_table} WHERE site_code = ?"
+                        query = f"SELECT * FROM {full_table} WHERE {self.parameters['keys_columns'][table]} = ?" # type: ignore
                         sql_cursor.execute(query, (site,))
                         
                     elif table in self.parameters["all_tables"]: # type: ignore
