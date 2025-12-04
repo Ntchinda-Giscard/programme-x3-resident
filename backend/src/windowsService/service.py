@@ -278,6 +278,7 @@ class PythonService(win32serviceutil.ServiceFramework):
         
         tables_to_sync = [
                         "ITMMASTER",
+                        "ITMFACILIT", "FACILITY",
                         "ITMSALES",
                         "BPARTNER",
                         "BPCUSTOMER",
@@ -363,7 +364,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                 }
                 parameters = {
                         "sites": ["AE011", "AE012"],
-                        "site_dependent_tables": ["ITMFACILIT", "FACILITY"],
+                        "site_dependent_tables": [("ITMFACILIT"), ("FACILITY")],
                         "all_tables": tables_to_sync
                     }
         
