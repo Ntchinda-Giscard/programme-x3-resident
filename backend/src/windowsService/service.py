@@ -185,6 +185,15 @@ class DatabaseSync:
                             WHERE {pk_column} IN ({placeholders})
                         """
 
+                        sql_cursor.execute(update_sql, pk_values)
+                        conn.commit()
+
+                        if self.fs:
+                            self.fs.write(
+                                f"[✓] Updated {len(pk_values)} exported rows in {table} "
+                                f"(ZTRANSFERT_0=2, ZTRANSTDATE=NOW)\n"
+                            )
+
                 sqlite_conn.commit()
 
                 if self.fs:
