@@ -190,7 +190,7 @@ class DatabaseSync:
 
                         if self.fs:
                             self.fs.write(
-                                f"[✓] Updated {len(pk_values)} exported rows in {table} "
+                                f"[*] Updated {len(pk_values)} exported rows in {table} "
                                 f"(ZTRANSFERT_0=2, ZTRANSTDATE=NOW)\n"
                             )
 
