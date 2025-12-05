@@ -166,6 +166,16 @@ class DatabaseSync:
                     # Insert into SQLite
                     for row in rows:
                         sqlite_cur.execute(insert_query, tuple(str(x) if x is not None else None for x in row))
+                    
+                    if len(rows) > 0 and self.fs:
+                        self.fs.write(f"    Inserted {len(rows)} records into {table}.\n")
+
+                        pk_column = self.parameters.get("keys_columns", {}) # type: ignore
+                        pk_indexes = columns.index(pk_column)
+                        pk_values = [row[pk_indexes] for row in rows]
+
+                        # Build dynamic placeholder list for IN (...)
+                        placeholders = ",".join("?" for _ in pk_values)
 
                 sqlite_conn.commit()
 
@@ -366,6 +376,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                         "sites": ["AE011", "AE012"],
                         "site_dependent_tables": ["ITMFACILIT","FACILITY"],
                         "keys_columns": {"ITMFACILIT": "STOFCY_0", "FACILITY": "FCY_0"},
+                        "keys_columns" :  "AUUID_0", 
                         "all_tables": tables_to_sync
                     }
         
