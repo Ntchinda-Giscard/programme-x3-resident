@@ -181,7 +181,7 @@ class DatabaseSync:
                             UPDATE {full_table}
                             SET 
                                 ZTRANSFERT_0 = 2,
-                                ZTRANSTDATE = GETDATE()
+                                ZTRANSDATE_0 = GETDATE()
                             WHERE {pk_column} IN ({placeholders})
                         """
 
@@ -191,7 +191,7 @@ class DatabaseSync:
                         if self.fs:
                             self.fs.write(
                                 f"[*] Updated {len(pk_values)} exported rows in {table} "
-                                f"(ZTRANSFERT_0=2, ZTRANSTDATE=NOW)\n"
+                                f"(ZTRANSFERT_0=2, ZTRANSTDATE_0=NOW)\n"
                             )
 
                 sqlite_conn.commit()
