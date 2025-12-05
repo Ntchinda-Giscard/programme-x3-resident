@@ -177,6 +177,14 @@ class DatabaseSync:
                         # Build dynamic placeholder list for IN (...)
                         placeholders = ",".join("?" for _ in pk_values)
 
+                        update_sql = f"""
+                            UPDATE {full_table}
+                            SET 
+                                ZTRANSFERT_0 = 2,
+                                ZTRANSTDATE = GETDATE()
+                            WHERE {pk_column} IN ({placeholders})
+                        """
+
                 sqlite_conn.commit()
 
                 if self.fs:
