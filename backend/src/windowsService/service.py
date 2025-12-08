@@ -321,7 +321,8 @@ class PythonService(win32serviceutil.ServiceFramework):
         
         tables_to_sync = [
                         "ITMMASTER",
-                        "ITMFACILIT", "FACILITY",
+                        "ITMFACILIT", 
+                        "FACILITY",
                         "ITMSALES",
                         "BPARTNER",
                         "BPCUSTOMER",
@@ -336,7 +337,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                         "SORDER",
                         "PIMPL",
                         "TABMODELIV",
-                        "STOCK",
+                        # "STOCK",
                         "BPCARRIER",
                         "COMPANY",
                         "TABSOHTYP",
