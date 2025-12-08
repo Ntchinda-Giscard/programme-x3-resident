@@ -194,6 +194,9 @@ class DatabaseSync:
                                 f"(ZTRANSFERT_0=2, ZTRANSTDATE_0=NOW)\n"
                             )
 
+                
+                
+                
                 sqlite_conn.commit()
 
                 if self.fs:
