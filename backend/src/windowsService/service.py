@@ -173,7 +173,7 @@ class DatabaseSync:
                         # Determine the primary key column for this table
                         if table in self.parameters["site_dependent_tables"]: # type: ignore
                             # For site-dependent tables, use the site key column
-                            pk_column = self.parameters['site_keys_columns'][table] # type: ignore
+                            pk_column = self.parameters['site_keys_column'][table] # type: ignore
                         else:
                             # For other tables, use the general primary key
                             pk_column = self.parameters["primary_key_column"] # type: ignore
@@ -187,7 +187,7 @@ class DatabaseSync:
                             pk_index = columns.index(pk_column)
                             pk_values = [row[pk_index] for row in rows]
 
-                            # Build dynamic placeholder list for IN (...)
+                            # Build dynamic placeholder list for IN (...)É
                             placeholders = ",".join("?" for _ in pk_values)
 
                             update_sql = f"""
@@ -408,8 +408,8 @@ class PythonService(win32serviceutil.ServiceFramework):
                 parameters = {
                         "sites": ["AE011", "AE012"],
                         "site_dependent_tables": ["ITMFACILIT","FACILITY"],
-                        "keys_columns": {"ITMFACILIT": "STOFCY_0", "FACILITY": "FCY_0"},
-                        "primary_keys_columns" :  "AUUID_0", 
+                        "site_keys_column": {"ITMFACILIT": "STOFCY_0", "FACILITY": "FCY_0"},
+                        "primary_key_column" :  "AUUID_0", 
                         "all_tables": tables_to_sync
                     }
         
