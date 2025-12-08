@@ -406,12 +406,12 @@ class PythonService(win32serviceutil.ServiceFramework):
                     'subject': 'Database Sync Update'
                 }
                 parameters = {
-                        "sites": ["AE011", "AE012"],
-                        "site_dependent_tables": ["ITMFACILIT","FACILITY"],
-                        "site_keys_column": {"ITMFACILIT": "STOFCY_0", "FACILITY": "FCY_0"},
-                        "primary_key_column" :  "AUUID_0", 
-                        "all_tables": tables_to_sync
-                    }
+                    "sites": ["AE011", "AE012"],
+                    "site_dependent_tables": ["ITMFACILIT", "FACILITY"],
+                    "site_keys_column": {"ITMFACILIT": "STOFCY_0", "FACILITY": "FCY_0"},
+                    "primary_key_column": "AUUID_0", 
+                    "all_tables": [t for t in tables_to_sync if t not in ["ITMFACILIT", "FACILITY"]]  # Exclude site-dependent
+                }
         
                 syncer = DatabaseSync(
                             sql_config,
