@@ -18,6 +18,7 @@ import pyodbc
 import sqlite3
 from datetime import datetime
 from decimal import Decimal
+import csv
 
 logging.basicConfig(
     level=logging.INFO,
@@ -287,19 +288,179 @@ class DatabaseSync:
             if self.fs:
                 self.fs.write(f"    Error sending email: {e}\n")
 
-    def run_sync(self, tables_to_sync: List[tuple]):
+    def run_sync(self):
         """
-        Runs the sync process for all specified tables.
+        Monitors SQL Server tables for changes and sends a single consolidated CSV per site.
         
-        - LOCAL DB: Always does UPSERT (adds/updates records, never recreates)
-        - EMAIL: First sync sends full DB, subsequent syncs send only changed records
+        Logic:
+        - ZTRANSFERT_0 = 0: New record (never transferred)
+        - ZTRANSFERT_0 = 2 AND UPDDATTIM_0 > ZTRANSDATE_0: Updated record
         
-        :param tables_to_sync: List of tuples (table_name, pk_column, timestamp_column)
-                                or (table_name, pk_column, timestamp_column, schema)
+        Creates one CSV file per site containing:
+        - All generic (non-site) tables with changes
+        - Site-specific tables with changes for that site
         """
         
         if self.fs:
-            self.fs.write("\n[*] No changes detected. Skipping backup.\n")
+            self.fs.write(f"\n[*] Starting sync monitoring at {datetime.now()}\n")
+        
+        # Get email addresses for each site
+        site_emails = self.parameters.get("site_emails", {})
+        
+        if not site_emails:
+            if self.fs:
+                self.fs.write("[!] No site emails configured. Skipping sync.\n")
+            return
+        
+        with self._get_sql_connection() as conn:
+            sql_cursor = conn.cursor()
+            
+            # Collect all changes per site
+            site_changes = {}  # {site: {table: (columns, rows)}}
+            generic_changes = {}  # {table: (columns, rows)} - for non-site tables
+            
+            for table in self.tables_to_sync:
+                full_table = f"{self.sql_config['schema']}.{table}"
+                
+                # Check if table has tracking columns
+                check_query = f"SELECT TOP 1 * FROM {full_table}"
+                sql_cursor.execute(check_query)
+                columns = [column[0] for column in sql_cursor.description]
+                
+                has_tracking = (
+                    'ZTRANSFERT_0' in columns and 
+                    'ZTRANSDATE_0' in columns and 
+                    'UPDDATTIM_0' in columns
+                )
+                
+                if not has_tracking:
+                    if self.fs:
+                        self.fs.write(f"[*] Table {table} does not have tracking columns. Skipping.\n")
+                    continue
+                
+                # Determine if site-dependent
+                is_site_dependent = table in self.parameters.get("site_dependent_tables", [])
+                
+                if is_site_dependent:
+                    # Collect changes per site
+                    site_column = self.parameters['site_keys_column'].get(table)
+                    if not site_column:
+                        if self.fs:
+                            self.fs.write(f"[!] No site column defined for {table}. Skipping.\n")
+                        continue
+                    
+                    for site in self.parameters.get("sites", []):
+                        query = f"""
+                            SELECT * FROM {full_table}
+                            WHERE {site_column} = ?
+                            AND (
+                                ZTRANSFERT_0 = 0 
+                                OR (ZTRANSFERT_0 = 2 AND UPDDATTIM_0 > ZTRANSDATE_0)
+                            )
+                        """
+                        
+                        sql_cursor.execute(query, (site,))
+                        rows = sql_cursor.fetchall()
+                        
+                        if len(rows) > 0:
+                            if self.fs:
+                                self.fs.write(f"[*] Found {len(rows)} changed records in {table} for site {site}\n")
+                            
+                            if site not in site_changes:
+                                site_changes[site] = {}
+                            site_changes[site][table] = (columns, rows)
+                            
+                            # Update tracking columns
+                            self._update_tracking_columns(conn, sql_cursor, table, full_table, columns, rows)
+                
+                else:
+                    # Generic table - collect changes once
+                    query = f"""
+                        SELECT * FROM {full_table}
+                        WHERE 
+                            ZTRANSFERT_0 = 0 
+                            OR (ZTRANSFERT_0 = 2 AND UPDDATTIM_0 > ZTRANSDATE_0)
+                    """
+                    
+                    sql_cursor.execute(query)
+                    rows = sql_cursor.fetchall()
+                    
+                    if len(rows) > 0:
+                        if self.fs:
+                            self.fs.write(f"[*] Found {len(rows)} changed records in {table} (generic table)\n")
+                        
+                        generic_changes[table] = (columns, rows)
+                        
+                        # Update tracking columns
+                        self._update_tracking_columns(conn, sql_cursor, table, full_table, columns, rows)
+            
+            # Now create one CSV per site with all their changes
+            for site in self.parameters.get("sites", []):
+                email = site_emails.get(site)
+                if not email:
+                    if self.fs:
+                        self.fs.write(f"[!] No email configured for site {site}. Skipping.\n")
+                    continue
+                
+                # Combine generic changes + site-specific changes
+                all_changes_for_site = {}
+                
+                # Add generic tables
+                for table, (columns, rows) in generic_changes.items():
+                    all_changes_for_site[table] = (columns, rows)
+                
+                # Add site-specific tables
+                if site in site_changes:
+                    for table, (columns, rows) in site_changes[site].items():
+                        all_changes_for_site[table] = (columns, rows)
+                
+                # Only send email if there are changes
+                if len(all_changes_for_site) > 0:
+                    csv_path = self._export_consolidated_csv(all_changes_for_site, site)
+                    self._send_consolidated_email(csv_path, site, email, all_changes_for_site)
+                else:
+                    if self.fs:
+                        self.fs.write(f"[*] No changes for site {site}\n")
+        
+        if self.fs:
+            self.fs.write(f"[*] Sync monitoring completed at {datetime.now()}\n")
+
+    def _export_consolidated_csv(self, changes_dict, site):
+        """
+        Export all changes to a single consolidated CSV file.
+        
+        Format:
+        TABLE_NAME,column1,column2,column3,...
+        ITMMASTER,value1,value2,value3,...
+        ITMMASTER,value1,value2,value3,...
+        FACILITY,value1,value2,...
+        FACILITY,value1,value2,...
+        """
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        csv_filename = f"sync_{site}_{timestamp}.csv"
+        csv_path = os.path.join(DELTA_FOLDER, csv_filename)
+        
+        with open(csv_path, 'w', newline='', encoding='utf-8-sig') as csvfile:
+            writer = csv.writer(csvfile)
+            
+            for table, (columns, rows) in changes_dict.items():
+                # Write header row with table name as first column
+                header = ['TABLE_NAME'] + columns
+                writer.writerow(header)
+                
+                # Write data rows with table name prefixed
+                for row in rows:
+                    data_row = [table] + [str(x) if x is not None else '' for x in row]
+                    writer.writerow(data_row)
+        
+        if self.fs:
+            self.fs.write(f"    Exported consolidated CSV: {csv_path}\n")
+        
+        return csv_path
+
+
+
+
 
 
 class PythonService(win32serviceutil.ServiceFramework):
