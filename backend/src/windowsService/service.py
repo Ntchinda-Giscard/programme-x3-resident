@@ -661,7 +661,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                 email_cursor = email_conn.cursor()
                 email_cursor.execute("SELECT * FROM email_configs")
                 email_rows = email_cursor.fetchone()
-                email_conn.close()
+                email_conn.close()                                
                             
                 email_config = {
                     'smtp_server': email_rows[1],
@@ -693,7 +693,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                             parameters = parameters,
                             fs=f
                         )
-                syncer.run_sync(tables_to_sync) # type: ignore
+                syncer.run_sync() # type: ignore
             except Exception as e:
                     f.write(f"Error in service execution: {e}\n")
         
