@@ -693,7 +693,6 @@ class PythonService(win32serviceutil.ServiceFramework):
                             parameters = parameters,
                             fs=f
                         )
-                syncer.run_sync() # type: ignore
             except Exception as e:
                     f.write(f"Error in service execution: {e}\n")
         
@@ -703,6 +702,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                     f.write(f"\n--- Sync run at {datetime.now()} ---\n")
                                         
                     f.write(f"Next sync in 60 seconds...\n")
+                    syncer.run_sync() # type: ignore
                     time.sleep(60)
                     
                 except Exception as e:
