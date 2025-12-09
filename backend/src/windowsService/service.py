@@ -183,6 +183,9 @@ class DatabaseSync:
                         else:
                             pk_index = columns.index(pk_column)
                             pk_values = [row[pk_index] for row in rows]
+                        
+                        # **BATCH THE UPDATES TO AVOID PARAMETER LIMIT**
+                        batch_size = 1000  # SQL Server safe limit
                 
                 
                 sqlite_conn.commit()
