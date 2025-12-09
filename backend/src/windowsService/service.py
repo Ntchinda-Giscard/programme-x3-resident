@@ -201,6 +201,12 @@ class DatabaseSync:
 
                                 sql_cursor.execute(update_sql, batch)
                                 conn.commit()
+                            
+                            if self.fs:
+                                self.fs.write(
+                                    f"[*] Updated {len(pk_values)} exported rows in {table} "
+                                    f"(ZTRANSFERT_0=2, ZTRANSDATE_0=NOW) in {(len(pk_values) + batch_size - 1) // batch_size} batches\n"
+                                )
                 
                 
                 sqlite_conn.commit()
