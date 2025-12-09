@@ -184,8 +184,23 @@ class DatabaseSync:
                             pk_index = columns.index(pk_column)
                             pk_values = [row[pk_index] for row in rows]
                         
-                        # **BATCH THE UPDATES TO AVOID PARAMETER LIMIT**
-                        batch_size = 1000  # SQL Server safe limit
+                            # **BATCH THE UPDATES TO AVOID PARAMETER LIMIT**
+                            batch_size = 1000  # SQL Server safe limit
+
+                            for i in range(0, len(pk_values), batch_size):
+                                batch = pk_values[i:i + batch_size]
+                                placeholders_batch = ",".join("?" for _ in batch)
+
+                                update_sql = f"""
+                                    UPDATE {full_table}
+                                    SET 
+                                        ZTRANSFERT_0 = 2,
+                                        ZTRANSDATE_0 = GETDATE()
+                                    WHERE {pk_column} IN ({placeholders_batch})
+                                """
+
+                                sql_cursor.execute(update_sql, batch)
+                                conn.commit()
                 
                 
                 sqlite_conn.commit()
