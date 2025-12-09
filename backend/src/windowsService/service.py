@@ -458,7 +458,63 @@ class DatabaseSync:
         
         return csv_path
 
+    def _send_consolidated_email(self, csv_path, site, to_email, changes_dict):
+        """Send consolidated CSV file via email."""
+        if not self.email_config:
+            if self.fs:
+                self.fs.write("    No email configuration provided, skipping email.\n")
+            return
+        
+        # Calculate totals
+        total_records = sum(len(rows) for _, (_, rows) in changes_dict.items())
+        total_tables = len(changes_dict)
+        
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = self.email_config['from_email']
+            msg['To'] = to_email
+            msg['Subject'] = f"Database Sync - {site} - {total_tables} tables, {total_records} records - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+            
+            # Build detailed body
+            body_text = f"""Database Sync Update
+                    Site: {site}
+                    Total Tables: {total_tables}
+                    Total Records: {total_records}
+                    Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
+                    Tables included in this sync:
+                    """
+            
+            for table, (_, rows) in changes_dict.items():
+                body_text += f"  - {table}: {len(rows)} records\n"
+            
+            body_text += "\nThis file contains all new or updated records since the last sync.\n"
+            
+            msg.attach(MIMEText(body_text, 'plain'))
+            
+            # Attach CSV file
+            with open(csv_path, 'rb') as attachment:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(attachment.read())
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition', f'attachment; filename={os.path.basename(csv_path)}')
+                msg.attach(part)
+            
+            smtp_server = self.email_config['smtp_server']
+            smtp_port = int(self.email_config.get('smtp_port', 587))
+            
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.starttls()
+                if 'smtp_username' in self.email_config and 'smtp_password' in self.email_config:
+                    server.login(self.email_config['smtp_username'], self.email_config['smtp_password'])
+                server.send_message(msg)
+            
+            if self.fs:
+                self.fs.write(f"    Email sent to {to_email} ({total_tables} tables, {total_records} records)\n")
+        except Exception as e:
+            if self.fs:
+                self.fs.write(f"    Error sending email to {to_email}: {e}\n")
+   
 
 
 
