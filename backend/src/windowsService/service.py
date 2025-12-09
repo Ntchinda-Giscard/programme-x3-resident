@@ -342,7 +342,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                         "COMPANY",
                         "TABSOHTYP",
                         "TABVACBPR",
-                        "SVCRVAT",
+                        # "SVCRVAT",
                         "ITMCATEG",
                         "CBLOB",
                         "ABLOB",
