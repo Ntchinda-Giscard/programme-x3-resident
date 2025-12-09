@@ -115,9 +115,6 @@ class DatabaseSync:
         return conn
 
 
-
-
-
     def _init_first_launch(self, tables: List[str]):
 
         for site in self.parameters["sites"]: # type: ignore
