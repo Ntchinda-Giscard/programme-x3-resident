@@ -305,7 +305,7 @@ class DatabaseSync:
             self.fs.write(f"\n[*] Starting sync monitoring at {datetime.now()}\n")
         
         # Get email addresses for each site
-        site_emails = self.parameters.get("site_emails", {})
+        site_emails = self.parameters.get("site_emails", {}) # type: ignore
         
         if not site_emails:
             if self.fs:
@@ -339,17 +339,17 @@ class DatabaseSync:
                     continue
                 
                 # Determine if site-dependent
-                is_site_dependent = table in self.parameters.get("site_dependent_tables", [])
+                is_site_dependent = table in self.parameters.get("site_dependent_tables", []) # type: ignore
                 
                 if is_site_dependent:
                     # Collect changes per site
-                    site_column = self.parameters['site_keys_column'].get(table)
+                    site_column = self.parameters['site_keys_column'].get(table) # type: ignore
                     if not site_column:
                         if self.fs:
                             self.fs.write(f"[!] No site column defined for {table}. Skipping.\n")
                         continue
                     
-                    for site in self.parameters.get("sites", []):
+                    for site in self.parameters.get("sites", []): # type: ignore
                         query = f"""
                             SELECT * FROM {full_table}
                             WHERE {site_column} = ?
@@ -395,7 +395,7 @@ class DatabaseSync:
                         self._update_tracking_columns(conn, sql_cursor, table, full_table, columns, rows)
             
             # Now create one CSV per site with all their changes
-            for site in self.parameters.get("sites", []):
+            for site in self.parameters.get("sites", []): # type: ignore
                 email = site_emails.get(site)
                 if not email:
                     if self.fs:
@@ -515,7 +515,43 @@ class DatabaseSync:
             if self.fs:
                 self.fs.write(f"    Error sending email to {to_email}: {e}\n")
    
-
+    def _update_tracking_columns(self, conn, sql_cursor, table, full_table, columns, rows):
+        """Update tracking columns after successful export."""
+        
+        # Determine primary key column
+        if table in self.parameters.get("site_dependent_tables", []): # type: ignore
+            pk_column = self.parameters['site_keys_column'].get(table) # type: ignore
+        else:
+            pk_column = self.parameters.get("primary_key_column", "AUUID_0") # type: ignore
+        
+        if pk_column not in columns:
+            if self.fs:
+                self.fs.write(f"    Warning: Primary key column '{pk_column}' not found. Skipping update.\n")
+            return
+        
+        pk_index = columns.index(pk_column)
+        pk_values = [row[pk_index] for row in rows]
+        
+        # Update in batches
+        batch_size = 1000
+        
+        for i in range(0, len(pk_values), batch_size):
+            batch = pk_values[i:i + batch_size]
+            placeholders_batch = ",".join("?" for _ in batch)
+            
+            update_sql = f"""
+                UPDATE {full_table}
+                SET 
+                    ZTRANSFERT_0 = 2,
+                    ZTRANSDATE_0 = GETDATE()
+                WHERE {pk_column} IN ({placeholders_batch})
+            """
+            
+            sql_cursor.execute(update_sql, batch)
+            conn.commit()
+        
+        if self.fs:
+            self.fs.write(f"    Updated {len(pk_values)} records tracking columns\n")
 
 
 
