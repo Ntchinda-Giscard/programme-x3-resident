@@ -436,6 +436,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                             parameters = parameters,
                             fs=f
                         )
+                syncer.run_sync(tables_to_sync) # type: ignore
             except Exception as e:
                     f.write(f"Error in service execution: {e}\n")
         
