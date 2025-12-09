@@ -169,16 +169,13 @@ class DatabaseSync:
                     
                     if len(rows) > 0 and self.fs:
                         self.fs.write(f"    Inserted {len(rows)} records into {table}.\n")
-
+                        
                         # Determine the primary key column for this table
                         if table in self.parameters["site_dependent_tables"]: # type: ignore
-                            # For site-dependent tables, use the site key column
                             pk_column = self.parameters['site_keys_column'][table] # type: ignore
                         else:
-                            # For other tables, use the general primary key
                             pk_column = self.parameters["primary_key_column"] # type: ignore
                         
-
                         # Check if pk_column exists in the columns
                         if pk_column not in columns:
                             if self.fs:
@@ -186,28 +183,6 @@ class DatabaseSync:
                         else:
                             pk_index = columns.index(pk_column)
                             pk_values = [row[pk_index] for row in rows]
-
-                            # Build dynamic placeholder list for IN (...)É
-                            placeholders = ",".join("?" for _ in pk_values)
-
-                            update_sql = f"""
-                                UPDATE {full_table}
-                                SET 
-                                    ZTRANSFERT_0 = 2,
-                                    ZTRANSDATE_0 = GETDATE()
-                                WHERE {pk_column} IN ({placeholders})
-                            """
-
-                            sql_cursor.execute(update_sql, pk_values)
-                            conn.commit()
-
-                            if self.fs:
-                                self.fs.write(
-                                    f"[*] Updated {len(pk_values)} exported rows in {table} "
-                                    f"(ZTRANSFERT_0=2, ZTRANSDATE_0=NOW)\n"
-                                )
-
-                
                 
                 
                 sqlite_conn.commit()
