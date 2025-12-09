@@ -702,6 +702,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                     f.write(f"\n--- Sync run at {datetime.now()} ---\n")
                                         
                     f.write(f"Next sync in 60 seconds...\n")
+                    syncer.fs = f  # type: ignore # Update file handle
                     syncer.run_sync() # type: ignore
                     time.sleep(60)
                     
