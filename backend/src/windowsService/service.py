@@ -135,58 +135,38 @@ class DatabaseSync:
                     # Determine full table name based on site dependency
                     full_table = f"{self.sql_config['schema']}.{table}" # type: ignore
 
-                    if table in self.parameters["site_dependent_tables"]: # type: ignore
-                        if self.fs:
-                            self.fs.write(f"[*] Exporting site-dependent table {table} for site {site} to local DB...\n")
-                        
-                        query = f"SELECT * FROM {full_table} WHERE {self.parameters['site_keys_column'][table]} = ?" # type: ignore
-                        sql_cursor.execute(query, (site,))
-                        
-                    elif table in self.parameters["all_tables"]: # type: ignore
-                        if self.fs:
-                            self.fs.write(f"[*] Exporting table {table} to local DB...\n")
-
-                        query = f"SELECT * FROM {full_table}"
-                        sql_cursor.execute(query)
-                    
-
-                    # Fetch column definitions from SQL Server
+                    # First, check if table has tracking columns
+                    check_columns_query = f"SELECT TOP 1 * FROM {full_table}"
+                    sql_cursor.execute(check_columns_query)
                     columns = [column[0] for column in sql_cursor.description]
+                    has_tracking = 'ZTRANSFERT_0' in columns and 'ZTRANSDATE_0' in columns
 
-                    # Create table in SQLite
-                    columns_def = ", ".join([f'"{col}" TEXT' for col in columns])  # TEXT default
-                    sqlite_cur.execute(f"DROP TABLE IF EXISTS {table}")
-                    sqlite_cur.execute(f"CREATE TABLE {table} ({columns_def})")
+                    # Determine the primary key column
+                    if table in self.parameters["site_dependent_tables"]: # type: ignore
+                        pk_column = self.parameters['site_keys_column'][table] # type: ignore
+                    else:
+                        pk_column = self.parameters["primary_key_column"] # type: ignore
 
-                    # Fetch all data
-                    rows = sql_cursor.fetchall()
-                    placeholders = ", ".join(["?"] * len(columns))
-                    insert_query = f"INSERT INTO {table} VALUES ({placeholders})"
-
-                    # Insert into SQLite
-                    for row in rows:
-                        sqlite_cur.execute(insert_query, tuple(str(x) if x is not None else None for x in row))
-                    
-                    if len(rows) > 0 and self.fs:
-                        self.fs.write(f"    Inserted {len(rows)} records into {table}.\n")
+                    # **STEP 1: UPDATE SQL SERVER FIRST (if has tracking columns)**
+                    if has_tracking and pk_column in columns:
+                        if self.fs:
+                            self.fs.write(f"[*] Updating tracking columns in SQL Server for {table}...\n")
                         
-                        # Determine the primary key column for this table
+                        # Get list of primary keys to update
                         if table in self.parameters["site_dependent_tables"]: # type: ignore
-                            pk_column = self.parameters['site_keys_column'][table] # type: ignore
+                            pk_query = f"SELECT {pk_column} FROM {full_table} WHERE {self.parameters['site_keys_column'][table]} = ?" # type: ignore
+                            sql_cursor.execute(pk_query, (site,))
                         else:
-                            pk_column = self.parameters["primary_key_column"] # type: ignore
+                            pk_query = f"SELECT {pk_column} FROM {full_table}"
+                            sql_cursor.execute(pk_query)
                         
-                        # Check if pk_column exists in the columns
-                        if pk_column not in columns:
-                            if self.fs:
-                                self.fs.write(f"    Warning: Primary key column '{pk_column}' not found in {table}. Skipping update.\n")
-                        else:
-                            pk_index = columns.index(pk_column)
-                            pk_values = [row[pk_index] for row in rows]
+                        pk_values = [row[0] for row in sql_cursor.fetchall()]
                         
-                            # **BATCH THE UPDATES TO AVOID PARAMETER LIMIT**
-                            batch_size = 1000  # SQL Server safe limit
-
+                        if len(pk_values) > 0:
+                            # Update in batches to avoid parameter limit
+                            batch_size = 1000
+                            total_updated = 0
+                            
                             for i in range(0, len(pk_values), batch_size):
                                 batch = pk_values[i:i + batch_size]
                                 placeholders_batch = ",".join("?" for _ in batch)
@@ -198,16 +178,52 @@ class DatabaseSync:
                                         ZTRANSDATE_0 = GETDATE()
                                     WHERE {pk_column} IN ({placeholders_batch})
                                 """
-
                                 sql_cursor.execute(update_sql, batch)
                                 conn.commit()
+                                total_updated += len(batch)
                             
                             if self.fs:
-                                self.fs.write(
-                                    f"[*] Updated {len(pk_values)} exported rows in {table} "
-                                    f"(ZTRANSFERT_0=2, ZTRANSDATE_0=NOW) in {(len(pk_values) + batch_size - 1) // batch_size} batches\n"
-                                )
-                
+                                self.fs.write(f"    Updated {total_updated} rows in SQL Server (in {(len(pk_values) + batch_size - 1) // batch_size} batches)\n")
+
+                    # **STEP 2: NOW FETCH THE UPDATED DATA**
+                    if table in self.parameters["site_dependent_tables"]: # type: ignore
+                        if self.fs:
+                            self.fs.write(f"[*] Exporting site-dependent table {table} for site {site} to local DB...\n")
+                        
+                        query = f"SELECT * FROM {full_table} WHERE {self.parameters['site_keys_column'][table]} = ?" # type: ignore
+                        sql_cursor.execute(query, (site,))
+                        
+                    else:
+                        if self.fs:
+                            self.fs.write(f"[*] Exporting table {table} to local DB...\n")
+
+                        query = f"SELECT * FROM {full_table}"
+                        sql_cursor.execute(query)
+                    
+                    # Fetch column definitions from SQL Server
+                    columns = [column[0] for column in sql_cursor.description]
+
+                    # Create table in SQLite
+                    columns_def = ", ".join([f'"{col}" TEXT' for col in columns])
+                    sqlite_cur.execute(f"DROP TABLE IF EXISTS {table}")
+                    sqlite_cur.execute(f"CREATE TABLE {table} ({columns_def})")
+
+                    # Fetch all data (now with updated values!)
+                    rows = sql_cursor.fetchall()
+                    
+                    if len(rows) > 0:
+                        placeholders = ", ".join(["?"] * len(columns))
+                        insert_query = f"INSERT INTO {table} VALUES ({placeholders})"
+
+                        # Insert into SQLite
+                        for row in rows:
+                            sqlite_cur.execute(insert_query, tuple(str(x) if x is not None else None for x in row))
+                        
+                        if self.fs:
+                            self.fs.write(f"    Inserted {len(rows)} records into {table} (SQLite).\n")
+                    else:
+                        if self.fs:
+                            self.fs.write(f"    No records found for {table}.\n")
                 
                 sqlite_conn.commit()
 
@@ -219,7 +235,8 @@ class DatabaseSync:
             
             sqlite_conn.close()
             conn.close()
-
+        
+        
     def ensure_folder(self, path):
         os.makedirs(path, exist_ok=True)
         return path
