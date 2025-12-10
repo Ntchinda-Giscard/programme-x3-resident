@@ -217,3 +217,9 @@ Error installing service: Accès refusé. (5)
 2025-12-10 15:25:20,628 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
 2025-12-10 15:25:23,412 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
 2025-12-10 15:25:23,414 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 15:42:36,435 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 15:42:36,461 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 15:48:42,846 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 15:48:42,849 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 15:55:32,338 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 15:55:32,340 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
