@@ -223,3 +223,25 @@ Error installing service: Accès refusé. (5)
 2025-12-10 15:48:42,849 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
 2025-12-10 15:55:32,338 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
 2025-12-10 15:55:32,340 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 16:52:28,444 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 16:52:28,449 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 16:53:01,537 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 16:53:01,539 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 16:53:57,114 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 16:53:57,115 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 17:10:57,981 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 17:10:57,989 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 17:17:33,431 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 17:17:33,436 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 17:19:41,319 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 17:19:47,241 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 17:20:33,042 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 17:20:33,044 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 17:20:38,283 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 17:20:38,287 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 17:22:17,383 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 17:22:17,395 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 17:26:02,254 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 17:26:02,257 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 17:26:09,156 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 17:26:09,158 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread

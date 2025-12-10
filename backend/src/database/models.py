@@ -48,5 +48,5 @@ class EmailConfig(Base):
 class SiteConfig(Base):
     __tablename__ = "site_configs"
     id = Column(Integer, primary_key=True, index=True)
-    site_url = Column(String, nullable=True)
+    site = Column(String, nullable=True)
     email_address = Column(String, nullable=True)
