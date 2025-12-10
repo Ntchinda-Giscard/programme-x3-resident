@@ -203,3 +203,17 @@ Error installing service: Accès refusé. (5)
 2025-11-19 15:07:13,151 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
 2025-11-19 15:25:17,031 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
 2025-11-19 15:25:17,033 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-12-10 13:23:44,400 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 13:23:44,767 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 13:26:29,531 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 13:26:29,568 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 13:43:23,422 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 13:43:23,426 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 13:58:09,560 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 13:58:09,563 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 14:08:48,193 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 14:08:48,198 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 15:25:20,626 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 15:25:20,628 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 15:25:23,412 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 15:25:23,414 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
