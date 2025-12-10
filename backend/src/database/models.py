@@ -43,3 +43,11 @@ class EmailConfig(Base):
     subject = Column(String, nullable=True)
     message = Column(String, nullable=True)
     
+
+
+class SiteConfig(Base):
+    __tablename__ = "site_configs"
+    id = Column(Integer, primary_key=True, index=True)
+    site = Column(String, nullable=True)
+    site_url = Column(String, nullable=True)
+    email_address = Column(String, nullable=True)
