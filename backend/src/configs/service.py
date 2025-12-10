@@ -22,7 +22,7 @@ def save_folder_settings_service(folder_settings: FolderSettings, db: Session = 
     return FolderSettings(source=new_config.source, destination=new_config.destination) # type: ignore
 
 
-def save_site_setting( configs: List[SiteConfigModel], db: Sessios = get_db()) -> List[SiteConfigModel] # type: ignore
+def save_site_setting( configs: List[SiteConfigModel], db: Session = get_db()) -> List[SiteConfigModel] # type: ignore
     results = []
     for config in configs:
         new_configs = SiteConfig(

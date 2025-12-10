@@ -1,9 +1,10 @@
+from typing import List
 from fastapi import APIRouter, Depends
-from .model import FolderSettings
+from .model import FolderSettings, SiteConfigModel
 from sqlalchemy.orm import Session
 from ..database.session import get_db
 from ..database.models import ConfigurationsFolders
-from .service import save_folder_settings_service
+from .service import save_folder_settings_service, save_site_setting
 
 folder_router = APIRouter(
     prefix="/config",
@@ -23,3 +24,7 @@ def get_folder_settings(db: Session = Depends(get_db)):
         source=response.source, # type: ignore
         destination=response.destination # type: ignore
     )
+
+@folder_router.post("/add/address", response_model=List[SiteConfigModel])
+def insert_config(configs: List[SiteConfigModel], db: Session = Depends(get_db)):
+    return save_site_setting(configs, db)
