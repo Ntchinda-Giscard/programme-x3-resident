@@ -264,3 +264,8 @@ Error installing service: Accès refusé. (5)
 2025-12-11 10:01:36,457 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
 2025-12-11 10:41:55,871 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
 2025-12-11 10:41:55,880 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-11 10:50:00,742 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-11 10:50:00,745 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-11 11:01:12,465 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-11 11:01:12,467 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-11 11:01:12,477 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
