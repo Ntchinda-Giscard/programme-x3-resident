@@ -1,4 +1,6 @@
 from typing import List
+
+from fastapi import Depends
 from .model import FolderSettings, SiteConfigModel
 from sqlalchemy.orm import Session
 from ..database.session import get_db
@@ -37,18 +39,16 @@ def save_site_setting( configs: List[SiteConfigModel], db: Session = get_db()) -
     return results
 
 
-def get_site_settting(db:Session = get_db()) -> List[SiteConfigModel]: # type: ignore
+def get_site_settting(db: Session = Depends(get_db)) -> List[SiteConfigModel]:
 
     response = db.query(SiteConfig).all()
 
-    results = []
-    for res in response:
-        results.append(
-            SiteConfigModel(
-                site=response[1],
-                email_address=response[2]
-            )
+    return [
+        SiteConfigModel(
+            site=res.site,
+            email_address=res.email_address
         )
-    
-    return results
+        for res in response
+    ]
+
 
