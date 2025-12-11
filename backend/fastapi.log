@@ -245,3 +245,18 @@ Error installing service: Accès refusé. (5)
 2025-12-10 17:26:02,257 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
 2025-12-10 17:26:09,156 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
 2025-12-10 17:26:09,158 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 17:37:21,691 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 17:37:21,701 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 17:38:54,733 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 17:38:54,749 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 17:39:35,093 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 17:39:35,096 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 17:43:28,994 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 17:43:28,995 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-11 09:44:00,292 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-11 09:44:00,484 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-11 09:47:45,567 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-11 09:47:45,851 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-11 09:49:47,632 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-11 09:49:47,639 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-11 09:49:47,649 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread

@@ -8,5 +8,5 @@ class FolderSettings(BaseModel):
 
 
 class SiteConfigModel(BaseModel):
-    site: str
+    site_url: str
     email_address: str

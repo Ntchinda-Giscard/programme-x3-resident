@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 LOCAL_DB_PATH = r"C:\poswaza\temp\db"
 
 # 1) Point to your SQLite file (relative to working dir)
-os.makedirs(LOCAL_DB_PATH, exist_ok=True)
+os.makedirs(LOCAL_DB_PATH, exist_ok=True, )
 SQLALCHEMY_DATABASE_URL = rf"sqlite:///{LOCAL_DB_PATH}\config.db"
 
 # 2) For SQLite only, we need this argument
@@ -22,6 +22,7 @@ SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine,
+    expire_on_commit=False 
 )
 
 # 4) Base class for your ORM models

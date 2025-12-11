@@ -26,7 +26,7 @@ def save_site_setting( configs: List[SiteConfigModel], db: Session = get_db()) -
     results = []
     for config in configs:
         new_configs = SiteConfig(
-            site=config.site,
+            site=config.site_url,
             email_address=config.email_address
         )
         results.append(new_configs)
