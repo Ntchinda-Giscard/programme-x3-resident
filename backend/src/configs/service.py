@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from .model import FolderSettings, SiteConfigModel
 from sqlalchemy.orm import Session
 from ..database.session import get_db
@@ -27,6 +27,12 @@ def save_folder_settings_service(folder_settings: FolderSettings, db: Session = 
 def save_site_setting( configs: List[SiteConfigModel], db: Session = get_db()) -> List[SiteConfigModel]: # type: ignore
     results = []
     for config in configs:
+        existing_site_config =  db.query(SiteConfig).filter(SiteConfig.site == config.site).first()
+        if existing_site_config:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Settings for site '{config.site}' already exist."
+            )
         new_configs = SiteConfig(
             site=config.site,
             email_address=config.email_address
@@ -45,10 +51,28 @@ def get_site_settting(db: Session = Depends(get_db)) -> List[SiteConfigModel]:
 
     return [
         SiteConfigModel(
-            site=res.site,
-            email_address=res.email_address
+            site=res.site, # type: ignore
+            email_address=res.email_address # type: ignore
         )
         for res in response
     ]
 
 
+def delete_site_setting(site: str, db: Session = Depends(get_db)) -> SiteConfigModel:
+    config = (
+        db.query(SiteConfig)
+        .filter(SiteConfig.site == site)
+        .first()
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Settings for site '{site}' not found."
+        )
+    db.delete(config)
+    db.commit()
+    return SiteConfigModel(
+        email_address=config.email_address, # type: ignore
+        site=config.site # type: ignore
+    )

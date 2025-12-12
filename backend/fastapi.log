@@ -282,3 +282,5 @@ Error installing service: Accès refusé. (5)
 2025-12-11 15:43:07,021 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
 2025-12-11 15:48:42,917 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
 2025-12-11 15:48:42,922 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-12 10:40:12,960 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-12 10:40:13,019 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
