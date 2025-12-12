@@ -4,7 +4,7 @@ from .model import FolderSettings, SiteConfigModel
 from sqlalchemy.orm import Session
 from ..database.session import get_db
 from ..database.models import ConfigurationsFolders
-from .service import get_site_settting, save_folder_settings_service, save_site_setting
+from .service import delete_site_setting, get_site_settting, save_folder_settings_service, save_site_setting
 
 folder_router = APIRouter(
     prefix="/config",
@@ -32,3 +32,7 @@ def insert_config(configs: List[SiteConfigModel], db: Session = Depends(get_db))
 @folder_router.get("/get/address", response_model=List[SiteConfigModel])
 def get_config(db: Session = Depends(get_db)):
     return get_site_settting(db)
+
+@folder_router.delete("/delete/address/{site}")
+def delete_config(site: str, db: Session = Depends(get_db)):
+    return delete_site_setting(site, db)

@@ -284,3 +284,17 @@ Error installing service: Accès refusé. (5)
 2025-12-11 15:48:42,922 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
 2025-12-12 10:40:12,960 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
 2025-12-12 10:40:13,019 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-12 10:42:55,967 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 10:42:55,985 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 10:43:08,663 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-12 10:43:08,666 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-12 10:43:08,669 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-12 10:47:54,805 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 10:47:54,812 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 10:48:18,571 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-12 10:48:18,575 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-12 10:48:18,576 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-12 11:52:10,084 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-12 11:52:10,133 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-12 11:59:08,858 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-12 11:59:08,862 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
