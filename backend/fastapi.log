@@ -316,3 +316,9 @@ Error installing service: Accès refusé. (5)
 2025-12-12 12:19:57,333 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
 2025-12-12 12:24:05,759 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
 2025-12-12 12:24:05,770 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-12 12:24:22,786 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 12:24:22,788 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 12:25:10,240 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 12:25:10,360 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 12:26:10,435 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 12:26:10,482 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
