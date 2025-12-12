@@ -29,10 +29,7 @@ def save_site_setting( configs: List[SiteConfigModel], db: Session = get_db()) -
     for config in configs:
         existing_site_config =  db.query(SiteConfig).filter(SiteConfig.site == config.site).first()
         if existing_site_config:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Settings for site '{config.site}' already exist."
-            )
+            continue
         new_configs = SiteConfig(
             site=config.site,
             email_address=config.email_address
