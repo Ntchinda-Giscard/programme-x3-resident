@@ -157,7 +157,7 @@ def install_service():
     """Install the Windows service"""
     try:
         status = get_service_status()
-        logger.info(f'Current service status: {status}')
+        logger.info(f'=====Current service status: {status}')
         if status['installed']:
             logger.info("Service already installed, returning early")
             return "Service is already installed"
@@ -227,6 +227,7 @@ def uninstall_service():
     try:
         # Stop service first if running
         status = get_service_status()
+        logger.info(f'=====Current service status: {status}')
         if status['installed'] and status['status'] == 'running':
             logger.info("Stopping service before uninstall...")
             stop_service()
@@ -262,6 +263,7 @@ def start_service():
     """Start the Windows service"""
     try:
         status = get_service_status()
+        logger.info(f'=====Current service status: {status}')
         
         if not status['installed']:
             raise Exception("Service is not installed. Please install it first.")
@@ -299,6 +301,7 @@ def stop_service():
     """Stop the Windows service"""
     try:
         status = get_service_status()
+        logger.info(f'=====Current service status: {status}')
         
         if not status['installed']:
             raise Exception("Service is not installed")
@@ -336,6 +339,7 @@ def restart_service():
     """Restart the Windows service"""
     try:
         status = get_service_status()
+        logger.info(f'=====Current service status: {status}')
         
         if not status['installed']:
             raise Exception("Service is not installed")
@@ -357,7 +361,9 @@ def restart_service():
 def get_service_status():
     """Get the current status of the service"""
     try:
-        status_code = win32serviceutil.QueryServiceStatus(SERVICE_NAME)[1]
+        service_satus = win32serviceutil.QueryServiceStatus(SERVICE_NAME)
+        logger.info(f"=== Service status {service_satus}")
+        status_code = service_satus[1]
         status_map = {
             1: "stopped",
             2: "start_pending",

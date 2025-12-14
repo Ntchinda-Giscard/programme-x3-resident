@@ -327,3 +327,38 @@ Error installing service: Accès refusé. (5)
 2025-12-12 14:49:26,043 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
 2025-12-12 14:49:26,096 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
 2025-12-12 14:49:26,110 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-14 09:53:40,498 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-14 09:53:41,802 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-14 10:39:40,520 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-14 10:39:40,523 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-14 10:42:55,909 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-14 10:42:55,914 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-14 10:42:55,915 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-14 10:44:25,227 - INFO - === CONTROLLER: Starting install request === - src.services.controller - install_service - 29 - MainThread
+2025-12-14 10:44:25,230 - INFO - Current service status: {'installed': True, 'status': 'running', 'status_code': 4} - service_manager - install_service - 160 - MainThread
+2025-12-14 10:44:25,237 - INFO - Service already installed, returning early - service_manager - install_service - 162 - MainThread
+2025-12-14 10:44:25,241 - INFO - === CONTROLLER: Service manager returned: Service is already installed === - src.services.controller - install_service - 31 - MainThread
+2025-12-14 10:44:25,243 - INFO - === CONTROLLER: Returning success response === - src.services.controller - install_service - 41 - MainThread
+2025-12-14 10:44:31,183 - INFO - === CONTROLLER: Starting service start request === - src.services.controller - start_service - 101 - MainThread
+2025-12-14 10:44:31,189 - INFO - === CONTROLLER: Service manager returned: Service is already running === - src.services.controller - start_service - 103 - MainThread
+2025-12-14 10:44:37,044 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-14 10:44:37,046 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-14 10:44:37,049 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-14 10:53:01,433 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-14 10:53:01,440 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-14 10:53:45,308 - INFO - === CONTROLLER: Starting install request === - src.services.controller - install_service - 29 - MainThread
+2025-12-14 10:53:45,311 - INFO - =====Current service status: {'installed': True, 'status': 'running', 'status_code': 4} - service_manager - install_service - 160 - MainThread
+2025-12-14 10:53:45,313 - INFO - Service already installed, returning early - service_manager - install_service - 162 - MainThread
+2025-12-14 10:53:45,318 - INFO - === CONTROLLER: Service manager returned: Service is already installed === - src.services.controller - install_service - 31 - MainThread
+2025-12-14 10:53:45,329 - INFO - === CONTROLLER: Returning success response === - src.services.controller - install_service - 41 - MainThread
+2025-12-14 10:55:12,258 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-14 10:55:12,262 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-14 10:55:23,476 - INFO - === CONTROLLER: Starting service start request === - src.services.controller - start_service - 101 - MainThread
+2025-12-14 10:55:23,479 - INFO - =====Current service status: {'installed': True, 'status': 'running', 'status_code': 4} - service_manager - start_service - 266 - MainThread
+2025-12-14 10:55:23,480 - INFO - === CONTROLLER: Service manager returned: Service is already running === - src.services.controller - start_service - 103 - MainThread
+2025-12-14 10:56:52,065 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-14 10:56:52,067 - INFO - =====Current service status: {'installed': True, 'status': 'running', 'status_code': 4} - service_manager - stop_service - 304 - MainThread
+2025-12-14 10:56:52,069 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 315 - MainThread
+2025-12-14 10:56:52,071 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-14 10:59:26,141 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-14 10:59:26,144 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread

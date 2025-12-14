@@ -1,6 +1,6 @@
 import logging
 import sys
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from .model import ServiceResponse, ServiceStatus
 import service_manager
@@ -34,7 +34,7 @@ async def install_service():
         if result is None:
             logger.error("=== CONTROLLER: Received None from install_service! ===")
             raise HTTPException(
-                status_code=500, 
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Service installation returned no result"
             )
         
