@@ -694,7 +694,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                     #     "AE011": "angeldobaron@gmail.com",
                     #     "AE012": "chrisdobaron@gmail.com"
                     # }  
-                    'site_email' : site_config_dict
+                    'site_emails' : site_config_dict
                 }
 
                 f.write(f"[*] =====> Site configs {site_config_dict} ")
