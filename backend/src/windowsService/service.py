@@ -584,147 +584,161 @@ class PythonService(win32serviceutil.ServiceFramework):
         os.makedirs(ZIP_FOLDER, exist_ok=True)
         os.makedirs(log_folder, exist_ok=True)
         
-        
         tables_to_sync = [
-                        "ITMMASTER",
-                        "ITMFACILIT", 
-                        "FACILITY",
-                        "ITMSALES",
-                        "BPARTNER",
-                        "BPCUSTOMER",
-                        "BPCUSTMVT",
-                        "BPDLVCUST",
-                        "SALESREP",
-                        "SPRICLINK",
-                        "PRICSTRUCT",
-                        "SPREASON",
-                        "SPRICCONF",
-                        "SPRICLIST",
-                        "SORDER",
-                        "PIMPL",
-                        "TABMODELIV",
-                        "STOCK",
-                        "BPCARRIER",
-                        "COMPANY",
-                        "TABSOHTYP",
-                        "TABVACBPR",
-                        "SVCRVAT",
-                        "ITMCATEG",
-                        "CBLOB",
-                        "ABLOB",
-                        "AUTILIS",
-                        "AMENUSER",
-                        "TABVAT",
-                        "BPADDRESS",
-                        "WAREHOUSE",
-                        "TABPAYTERM",
-                        "TABDEPAGIO",
-                        "BPCINVVAT",
-                        "TABRATVAT",
-                        "TABVACITM",
-                        "TABVAC",
-                        "TAXLINK",
-                        "SFOOTINV",
-                        "SORDERQ",
-                        "SORDERP"
-                    ]
+            "ITMMASTER", "ITMFACILIT", "FACILITY", "ITMSALES", "BPARTNER",
+            "BPCUSTOMER", "BPCUSTMVT", "BPDLVCUST", "SALESREP", "SPRICLINK",
+            "PRICSTRUCT", "SPREASON", "SPRICCONF", "SPRICLIST", "SORDER",
+            "PIMPL", "TABMODELIV", "STOCK", "BPCARRIER", "COMPANY",
+            "TABSOHTYP", "TABVACBPR", "SVCRVAT", "ITMCATEG", "CBLOB",
+            "ABLOB", "AUTILIS", "AMENUSER", "TABVAT", "BPADDRESS",
+            "WAREHOUSE", "TABPAYTERM", "TABDEPAGIO", "BPCINVVAT",
+            "TABRATVAT", "TABVACITM", "TABVAC", "TAXLINK", "SFOOTINV",
+            "SORDERQ", "SORDERP"
+        ]
         
-        
-        with open(rf"{log_folder}\service_log.txt", "a") as f:
-            site_config_dict = {}
-            try:
-                db_path = rf"{LOCAL_DB_PATH}\config.db"
-                config_conn = sqlite3.connect(db_path)
-                config_cursor = config_conn.cursor()
-                config_cursor.execute("SELECT * FROM database_configuration")
-                config_rows = config_cursor.fetchone()
-                config_conn.close()
-                
-                sql_config = {
-                    'username': config_rows[7],
-                    'password': config_rows[8],
-                    'server': f"{config_rows[3]},{config_rows[4]}",
-                    'database': config_rows[5],
-                    'driver': 'ODBC Driver 17 for SQL Server',
-                    'dsn': config_rows[1],
-                    'schema': config_rows[6]
-                }
-                            
-                # Get folder configuration
-                folder_conn = sqlite3.connect(db_path)
-                folder_cursor = folder_conn.cursor()
-                folder_cursor.execute("SELECT * FROM configurations_folders")
-                folder_rows = folder_cursor.fetchone()
-                folder_conn.close()
-                            
-                # Get email configuration
-                email_conn = sqlite3.connect(db_path)
-                email_cursor = email_conn.cursor()
-                email_cursor.execute("SELECT * FROM email_configs")
-                email_rows = email_cursor.fetchone()
-                email_conn.close()      
-
-
-                site_config_conn = sqlite3.connect(db_path)
-                site_config_cursor = site_config_conn.cursor()
-                site_config_cursor.execute("SELECT * FROM site_configs") 
-                site_configs = site_config_cursor.fetchall()
-                site_config_conn.close()      
-
-                for site_config in site_configs:
-                    site_config_dict[site_config[1]] = site_config[2]
-                            
-                email_config = {
-                    'smtp_server': email_rows[1],
-                    'smtp_port': email_rows[4],
-                    'smtp_username': email_rows[2],
-                    'smtp_password': email_rows[3],
-                    'from_email': email_rows[2],
-                    'to_email': email_rows[5],
-                    'subject': 'Database Sync Update'
-                }
-                
-                parameters = {
-                    "sites": ["AE011", "AE012"],
-                    "site_dependent_tables": ["ITMFACILIT", "FACILITY"],
-                    "site_keys_column": {"ITMFACILIT": "STOFCY_0", "FACILITY": "FCY_0"},
-                    "primary_key_column": "AUUID_0", 
-                    "all_tables": [t for t in tables_to_sync if t not in ["ITMFACILIT", "FACILITY"]],  # Exclude site-dependent
-                    # "site_emails": {
-                    #     "AE011": "angeldobaron@gmail.com",
-                    #     "AE012": "chrisdobaron@gmail.com"
-                    # }  
-                    'site_email' : site_config_dict
-                }
-        
-                syncer = DatabaseSync(
-                            sql_config,
-                            tables_to_sync=tables_to_sync,
-                            local_db_path=rf"{LOCAL_DB_PATH}",
-                            zip_folder=ZIP_FOLDER,
-                            email_config=email_config,
-                            parameters = parameters,
-                            fs=f
-                        )
-            except Exception as e:
-                    f.write(f"Error in service execution: {e}\n")
+        syncer = None  # Initialize to None
         
         while self.running:
             with open(rf"{log_folder}\service_log.txt", "a") as f:
                 try:
                     f.write(f"\n--- Sync run at {datetime.now()} ---\n")
-                                        
-                    f.write(f"Next sync in 60 seconds...\n")
-                    syncer.fs = f  # type: ignore # Update file handle
-                    syncer.run_sync() # type: ignore
-                    time.sleep(60)
+                    
+                    # Only initialize syncer if it hasn't been created yet
+                    if syncer is None:
+                        f.write("[*] Initializing DatabaseSync...\n")
+                        
+                        db_path = rf"{LOCAL_DB_PATH}\config.db"
+                        
+                        # Get database configuration
+                        config_conn = sqlite3.connect(db_path)
+                        config_cursor = config_conn.cursor()
+                        config_cursor.execute("SELECT * FROM database_configuration")
+                        config_rows = config_cursor.fetchone()
+                        config_conn.close()
+                        
+                        if not config_rows:
+                            f.write("[ERROR] No database configuration found!\n")
+                            time.sleep(60)
+                            continue
+                        
+                        sql_config = {
+                            'username': config_rows[7],
+                            'password': config_rows[8],
+                            'server': f"{config_rows[3]},{config_rows[4]}",
+                            'database': config_rows[5],
+                            'driver': 'ODBC Driver 17 for SQL Server',
+                            'dsn': config_rows[1],
+                            'schema': config_rows[6]
+                        }
+                        
+                        # Get email configuration
+                        email_conn = sqlite3.connect(db_path)
+                        email_cursor = email_conn.cursor()
+                        email_cursor.execute("SELECT * FROM email_configs")
+                        email_rows = email_cursor.fetchone()
+                        email_conn.close()
+                        
+                        if not email_rows:
+                            f.write("[WARNING] No email configuration found!\n")
+                            email_config = None
+                        else:
+                            email_config = {
+                                'smtp_server': email_rows[1],
+                                'smtp_port': email_rows[4],
+                                'smtp_username': email_rows[2],
+                                'smtp_password': email_rows[3],
+                                'from_email': email_rows[2],
+                                'to_email': email_rows[5],
+                                'subject': 'Database Sync Update'
+                            }
+                        
+                        # Get site configurations
+                        site_config_dict = {}
+                        site_config_conn = sqlite3.connect(db_path)
+                        site_config_cursor = site_config_conn.cursor()
+                        site_config_cursor.execute("SELECT * FROM site_configs")
+                        site_configs = site_config_cursor.fetchall()
+                        site_config_conn.close()
+                        
+                        for site_config in site_configs:
+                            site_config_dict[site_config[1]] = site_config[2]
+                        
+                        parameters = {
+                            "sites": ["AE011", "AE012"],
+                            "site_dependent_tables": ["ITMFACILIT", "FACILITY"],
+                            "site_keys_column": {"ITMFACILIT": "STOFCY_0", "FACILITY": "FCY_0"},
+                            "primary_key_column": "AUUID_0",
+                            "all_tables": [t for t in tables_to_sync if t not in ["ITMFACILIT", "FACILITY"]],
+                            "site_emails": site_config_dict
+                        }
+
+                        f.write(f"[*] ====> file dict {site_config_dict}")
+                        
+                        # Initialize syncer
+                        syncer = DatabaseSync(
+                            sql_config,
+                            tables_to_sync=tables_to_sync,
+                            local_db_path=LOCAL_DB_PATH,
+                            zip_folder=ZIP_FOLDER,
+                            email_config=email_config,
+                            parameters=parameters,
+                            fs=f
+                        )
+                        f.write("[*] DatabaseSync initialized successfully\n")
+                    
+                    # Run sync with current file handle
+                    syncer.fs = f
+                    f.write("[*] Starting sync operation...\n")
+                    syncer.run_sync()
+                    f.write(f"[*] Sync completed. Next sync in 60 seconds...\n")
+                    
+                except pyodbc.Error as db_error:
+                    # Specific handling for database errors
+                    error_msg = str(db_error)
+                    f.write(f"[ERROR] Database connection error: {error_msg}\n")
+                    
+                    if "18456" in error_msg:
+                        f.write("[ERROR] SQL Server Authentication Failed - Possible causes:\n")
+                        f.write("  1. Wrong username/password in config.db\n")
+                        f.write("  2. User 'superadmin' doesn't exist on SQL Server\n")
+                        f.write("  3. User account is disabled or locked\n")
+                        f.write("  4. SQL Server authentication mode not enabled (requires Mixed Mode)\n")
+                        f.write("  5. User doesn't have permission to access database 'x3waza'\n")
+                        f.write("\nTo fix:\n")
+                        f.write("  - Verify credentials in SQL Server Management Studio\n")
+                        f.write("  - Check SQL Server allows SQL authentication (not just Windows auth)\n")
+                        f.write("  - Verify user has db_datareader role on database\n")
+                    elif "08001" in error_msg or "connection" in error_msg.lower():
+                        f.write("[ERROR] Cannot reach SQL Server - Check:\n")
+                        f.write("  1. Server IP/port correct: 192.168.2.41:1433\n")
+                        f.write("  2. SQL Server service is running\n")
+                        f.write("  3. Firewall allows port 1433\n")
+                        f.write("  4. Network connectivity\n")
+                    
+                    # Reset syncer to force re-initialization on next attempt
+                    syncer = None
+                    
+                except sqlite3.Error as sqlite_error:
+                    f.write(f"[ERROR] SQLite error (config.db issue): {sqlite_error}\n")
+                    f.write("  - Check if config.db exists and is not corrupted\n")
+                    f.write("  - Verify all required tables exist (database_configuration, email_configs, site_configs)\n")
+                    syncer = None
                     
                 except Exception as e:
-                    f.write(f"Error in service execution: {e}\n")
+                    f.write(f"[ERROR] Unexpected error: {type(e).__name__}: {e}\n")
+                    import traceback
+                    f.write(f"Traceback:\n{traceback.format_exc()}\n")
+                    # Don't reset syncer for unknown errors - might be transient
             
+            # Wait before next sync
             time.sleep(60)
-
+        
         servicemanager.LogInfoMsg("WAZAPOS_TEST - Service stopped.")
+
+
+
+
+
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(PythonService)
