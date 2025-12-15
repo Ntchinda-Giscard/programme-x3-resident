@@ -7,3 +7,5 @@ conn = pyodbc.connect(
     "PWD=MotDePasseFort!2025"
 )
 print("Connection successful!")
+
+# lzazwfuicxyvnsrx
