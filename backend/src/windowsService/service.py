@@ -690,10 +690,11 @@ class PythonService(win32serviceutil.ServiceFramework):
                     "site_keys_column": {"ITMFACILIT": "STOFCY_0", "FACILITY": "FCY_0"},
                     "primary_key_column": "AUUID_0", 
                     "all_tables": [t for t in tables_to_sync if t not in ["ITMFACILIT", "FACILITY"]],  # Exclude site-dependent
-                    "site_emails": {
-                        "AE011": "angeldobaron@gmail.com",
-                        "AE012": "chrisdobaron@gmail.com"
-                    }  
+                    # "site_emails": {
+                    #     "AE011": "angeldobaron@gmail.com",
+                    #     "AE012": "chrisdobaron@gmail.com"
+                    # }  
+                    'site_email' : site_config_dict
                 }
         
                 syncer = DatabaseSync(
