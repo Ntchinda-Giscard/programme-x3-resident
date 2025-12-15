@@ -661,7 +661,14 @@ class PythonService(win32serviceutil.ServiceFramework):
                 email_cursor = email_conn.cursor()
                 email_cursor.execute("SELECT * FROM email_configs")
                 email_rows = email_cursor.fetchone()
-                email_conn.close()                                
+                email_conn.close()      
+
+
+                site_config_conn = sqlite3.connect(db_path)
+                site_config_cursor = site_config_conn.cursor()
+                site_config_cursor.execute("SELECT * FROM site_configs") 
+                site_configs = site_config_cursor.fetchall()
+                site_config_conn.close()           
                             
                 email_config = {
                     'smtp_server': email_rows[1],
