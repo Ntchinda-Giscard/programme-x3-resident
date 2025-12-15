@@ -659,6 +659,8 @@ class PythonService(win32serviceutil.ServiceFramework):
                         site_config_cursor.execute("SELECT * FROM site_configs")
                         site_configs = site_config_cursor.fetchall()
                         site_config_conn.close()
+
+                        f.write(f"[*] ==== site config fetched {site_configs}")
                         
                         for site_config in site_configs:
                             site_config_dict[site_config[1]] = site_config[2]
