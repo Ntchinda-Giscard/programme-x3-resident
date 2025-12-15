@@ -684,7 +684,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                     'subject': 'Database Sync Update'
                 }
 
-                f.write(f"[*] ====> Email sender {email_rows[2]} password {email_rows[3]} ")
+                f.write(f"[*] ====> Email sender {email_rows[2]} password {email_rows[3]} \n")
                 
                 parameters = {
                     "sites": ["AE011", "AE012"],
@@ -699,7 +699,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                     'site_emails' : site_config_dict
                 }
 
-                f.write(f"[*] =====> Site configs {site_config_dict} ")
+                f.write(f"[*] =====> Site configs {site_config_dict} \n")
         
                 syncer = DatabaseSync(
                             sql_config,
