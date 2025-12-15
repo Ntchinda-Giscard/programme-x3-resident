@@ -631,6 +631,7 @@ class PythonService(win32serviceutil.ServiceFramework):
         
         
         with open(rf"{log_folder}\service_log.txt", "a") as f:
+            site_config_dict = {}
             try:
                 db_path = rf"{LOCAL_DB_PATH}\config.db"
                 config_conn = sqlite3.connect(db_path)
@@ -668,7 +669,10 @@ class PythonService(win32serviceutil.ServiceFramework):
                 site_config_cursor = site_config_conn.cursor()
                 site_config_cursor.execute("SELECT * FROM site_configs") 
                 site_configs = site_config_cursor.fetchall()
-                site_config_conn.close()           
+                site_config_conn.close()      
+
+                for site_config in site_configs:
+                    site_config_dict[site_config[1]] = site_config[2]
                             
                 email_config = {
                     'smtp_server': email_rows[1],
@@ -679,6 +683,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                     'to_email': email_rows[5],
                     'subject': 'Database Sync Update'
                 }
+                
                 parameters = {
                     "sites": ["AE011", "AE012"],
                     "site_dependent_tables": ["ITMFACILIT", "FACILITY"],
