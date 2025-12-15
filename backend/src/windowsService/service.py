@@ -696,6 +696,8 @@ class PythonService(win32serviceutil.ServiceFramework):
                     # }  
                     'site_email' : site_config_dict
                 }
+
+                f.write(f"[*] =====> Site configs {site_config_dict} ")
         
                 syncer = DatabaseSync(
                             sql_config,
