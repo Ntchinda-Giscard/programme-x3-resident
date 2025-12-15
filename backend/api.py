@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.configs.controller import folder_router
 from src.services.controller import service_router
 from src.odbc.controller import odbc_router
-from src.email.controller import email_router
+from src.email_config.controller import email_router
 from src.database.session import engine, Base
 
 

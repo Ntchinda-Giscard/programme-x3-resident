@@ -683,6 +683,8 @@ class PythonService(win32serviceutil.ServiceFramework):
                     'to_email': email_rows[5],
                     'subject': 'Database Sync Update'
                 }
+
+                f.write(f"[*] ====> Email sender {email_rows[2]} password {email_rows[3]} ")
                 
                 parameters = {
                     "sites": ["AE011", "AE012"],
