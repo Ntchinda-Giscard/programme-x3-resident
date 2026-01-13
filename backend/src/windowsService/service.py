@@ -1,50 +1,458 @@
-from calendar import c
-from email import encoders
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import os
-from pathlib import Path
-import smtplib
-from typing import Any, Dict, List, Optional
-import zipfile
 import win32serviceutil
 import win32service
 import win32event
 import servicemanager
+import socket
+import sys
+import os
 import time
 import logging
-import pyodbc
 import sqlite3
-from datetime import datetime
-from decimal import Decimal
+import pyodbc 
 import csv
+import smtplib
+from pathlib import Path
+from datetime import datetime
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from typing import Any, Dict, List, Optional, Tuple
+
+# Setup Logging
+BASE_FOLDER = r"C:\poswaza\temp"
+LOG_FOLDER = os.path.join(BASE_FOLDER, "logs")
+os.makedirs(LOG_FOLDER, exist_ok=True)
+
+log_file_path = os.path.join(LOG_FOLDER, "service.log")
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s',
+    format='%(asctime)s - %(levelname)s - %(module)s - %(message)s',
     handlers=[
-        logging.FileHandler('fastapi.log')
+        logging.FileHandler(log_file_path),
+        logging.StreamHandler(sys.stdout)
     ]
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("WazaService")
 
-BASE_FOLDER = r"C:\poswaza\temp"
-LOCAL_DB_PATH = rf"{BASE_FOLDER}\db"
-ZIP_FOLDER = rf"{BASE_FOLDER}\zip"
-DELTA_FOLDER = rf"{BASE_FOLDER}\delta"
+# Constants
+LOCAL_DB_PATH = os.path.join(BASE_FOLDER, "db")
+ZIP_FOLDER = os.path.join(BASE_FOLDER, "zip")
+DELTA_FOLDER = os.path.join(BASE_FOLDER, "delta")
+CONFIG_DB_PATH = os.path.join(LOCAL_DB_PATH, "config.db")
+
+class ConfigLoader:
+    """Handles loading configuration from the local SQLite database."""
+    
+    @staticmethod
+    def get_sql_config() -> Dict[str, str]:
+        try:
+            with sqlite3.connect(CONFIG_DB_PATH) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM database_configuration")
+                row = cursor.fetchone()
+                
+                if not row:
+                    logger.error("No database configuration found.")
+                    return {}
+                
+                # Assuming row structure matches: id, odbc_source, connection_type, host, port, database, schemas, username, password
+                # Adjust indices if model changes. Based on original code:
+                # row[1]=dsn, row[3]=host, row[4]=port, row[5]=database, row[6]=schema, row[7]=user, row[8]=pass
+                
+                return {
+                    'username': row[7],
+                    'password': row[8],
+                    'server': f"{row[3]},{row[4]}",
+                    'database': row[5],
+                    'driver': 'ODBC Driver 17 for SQL Server',
+                    'dsn': row[1],
+                    'schema': row[6]
+                }
+        except Exception as e:
+            logger.error(f"Error loading SQL config: {e}")
+            return {}
+
+    @staticmethod
+    def get_email_config() -> Dict[str, Any]:
+        try:
+            with sqlite3.connect(CONFIG_DB_PATH) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM email_configs")
+                row = cursor.fetchone()
+                
+                if not row:
+                    return {}
+
+                # stored in email_configs table
+                return {
+                    'smtp_server': row[1],
+                    'smtp_username': row[2],
+                    'smtp_password': row[3],
+                    'smtp_port': row[4],
+                    'from_email': row[2],
+                    'to_email': row[5], # Default receiver if needed
+                }
+        except Exception as e:
+            logger.error(f"Error loading Email config: {e}")
+            return {}
+
+    @staticmethod
+    def get_site_emails() -> Dict[str, str]:
+        try:
+            with sqlite3.connect(CONFIG_DB_PATH) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM site_configs")
+                rows = cursor.fetchall()
+                # row[1] = site, row[2] = email
+                return {row[1]: row[2] for row in rows}
+        except Exception as e:
+            logger.error(f"Error loading site configs: {e}")
+            return {}
+
+
+class EmailSender:
+    """Handles email operations."""
+    
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+
+    def send_email(self, to_email: str, subject: str, body: str, attachment_path: Optional[str] = None):
+        if not self.config:
+            logger.warning("Email configuration missing. Skipping email.")
+            return
+
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = self.config.get('from_email')
+            msg['To'] = to_email
+            msg['Subject'] = subject
+            
+            msg.attach(MIMEText(body, 'plain'))
+            
+            if attachment_path and os.path.exists(attachment_path):
+                with open(attachment_path, 'rb') as f:
+                    part = MIMEBase('application', 'octet-stream')
+                    part.set_payload(f.read())
+                    encoders.encode_base64(part)
+                    part.add_header('Content-Disposition', f'attachment; filename={os.path.basename(attachment_path)}')
+                    msg.attach(part)
+            
+            smtp_server = self.config.get('smtp_server')
+            smtp_port = int(self.config.get('smtp_port', 587))
+            
+            logger.info(f"Sending email to {to_email} via {smtp_server}:{smtp_port}")
+            
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.starttls()
+                if self.config.get('smtp_username') and self.config.get('smtp_password'):
+                    server.login(self.config['smtp_username'], self.config['smtp_password'])
+                server.send_message(msg)
+                
+            logger.info(f"Email sent successfully to {to_email}")
+            
+        except Exception as e:
+            logger.error(f"Failed to send email to {to_email}: {e}")
 
 class DatabaseSync:
     def __init__(
         self, 
         sql_server_config: Dict[str, str],
         tables_to_sync: List[str],
-        email_config: Optional[Dict[str, str]],
+        email_sender: EmailSender,
         parameters: Optional[Dict[str, Any]],
-        local_db_path: str,
-        zip_folder: str = ZIP_FOLDER,
-        fs: Optional[Any] = None
+        local_db_path: str = LOCAL_DB_PATH,
+        zip_folder: str = ZIP_FOLDER
     ):
+        self.sql_config = sql_server_config
+        self.parameters = parameters or {}
+        self.zip_folder = zip_folder
+        self.email_sender = email_sender
+        self.tables_to_sync = tables_to_sync
+        self.local_db_path = local_db_path
+        
+        # Create folders
+        Path(self.zip_folder).mkdir(parents=True, exist_ok=True)
+        Path(DELTA_FOLDER).mkdir(parents=True, exist_ok=True)
+        os.makedirs(local_db_path, exist_ok=True)
+        
+        # Initialize
+        try:
+            self._init_first_launch(self.tables_to_sync)
+        except Exception as e:
+            logger.error(f"Initialization failed: {e}")
+
+    def _get_sql_connection(self):
+        """Creates a connection to the remote SQL Server."""
+        try:
+            dsn = self.sql_config.get('dsn')
+            username = self.sql_config.get('username')
+            password = self.sql_config.get('password')
+            
+            if dsn:
+                if username and password:
+                    conn_str = f"DSN={dsn};UID={username};PWD={password}"
+                else:
+                    conn_str = f"DSN={dsn};Trusted_Connection=yes"
+            else:
+                server = self.sql_config.get('server')
+                database = self.sql_config.get('database')
+                driver = self.sql_config.get('driver', 'ODBC Driver 17 for SQL Server')
+                
+                if username and password:
+                    conn_str = f"DRIVER={{{driver}}};SERVER={server};DATABASE={database};UID={username};PWD={password}"
+                else:
+                    conn_str = f"DRIVER={{{driver}}};SERVER={server};DATABASE={database};Trusted_Connection=yes"
+            
+            # Mask password for logging
+            safe_conn_str = conn_str.replace(password, "***") if password else conn_str
+            logger.info(f"Connecting to SQL Server: {safe_conn_str}")
+            
+            conn = pyodbc.connect(conn_str, timeout=30)
+            conn.setdecoding(pyodbc.SQL_CHAR, encoding='latin-1')
+            conn.setdecoding(pyodbc.SQL_WCHAR, encoding='latin-1')
+            conn.setencoding('latin-1')
+            return conn
+        except Exception as e:
+            logger.error(f"Failed to connect to SQL Server: {e}")
+            raise
+
+    def _init_first_launch(self, tables: List[str]):
+        """Exports tables to SQLite for the first time if needed."""
+        if not self.parameters.get("sites"):
+            logger.warning("No sites defined in parameters.")
+            return
+
+        for site in self.parameters["sites"]:
+            logger.info(f"checking/exporting tables for site: {site}")
+            site_db_folder = os.path.join(self.local_db_path, site)
+            os.makedirs(site_db_folder, exist_ok=True)
+            
+            sqlite_path = os.path.join(site_db_folder, "local_data.db")
+            
+            with sqlite3.connect(sqlite_path) as sqlite_conn:
+                sqlite_cur = sqlite_conn.cursor()
+                
+                try:
+                    with self._get_sql_connection() as conn:
+                        sql_cursor = conn.cursor()
+                        
+                        for table in tables:
+                            full_table = f"{self.sql_config.get('schema', 'dbo')}.{table}"
+                            
+                            try:
+                                # Check tracking columns presence
+                                sql_cursor.execute(f"SELECT TOP 1 * FROM {full_table}")
+                                columns = [column[0] for column in sql_cursor.description]
+                                has_tracking = 'ZTRANSFERT_0' in columns and 'ZTRANSDATE_0' in columns
+
+                                # Determine Primary Key
+                                if table in self.parameters.get("site_dependent_tables", []):
+                                    pk_column = self.parameters['site_keys_column'][table]
+                                else:
+                                    pk_column = self.parameters.get("primary_key_column", "AUUID_0")
+
+                                # Update headers in SQL Server
+                                if has_tracking and pk_column in columns:
+                                    self._mark_as_transferred(sql_cursor, conn, table, full_table, pk_column, site)
+
+                                # Export Data
+                                self._export_to_sqlite(sql_cursor, sqlite_cur, table, full_table, site)
+                                
+                            except Exception as table_err:
+                                logger.error(f"Error processing table {table} for site {site}: {table_err}")
+                        
+                        sqlite_conn.commit()
+                except Exception as db_err:
+                    logger.error(f"Database operation failed during init: {db_err}")
+
+    def _mark_as_transferred(self, sql_cursor, conn, table, full_table, pk_column, site):
+        """Marks records as transferred in SQL Server."""
+        try:
+            if table in self.parameters.get("site_dependent_tables", []):
+                query = f"SELECT {pk_column} FROM {full_table} WHERE {self.parameters['site_keys_column'][table]} = ?"
+                sql_cursor.execute(query, (site,))
+            else:
+                query = f"SELECT {pk_column} FROM {full_table}"
+                sql_cursor.execute(query)
+            
+            pk_values = [row[0] for row in sql_cursor.fetchall()]
+            
+            if pk_values:
+                logger.debug(f"Marking {len(pk_values)} rows as transferred in {table}")
+                batch_size = 1000
+                for i in range(0, len(pk_values), batch_size):
+                    batch = pk_values[i:i + batch_size]
+                    placeholders = ",".join("?" for _ in batch)
+                    update_sql = f"""
+                        UPDATE {full_table}
+                        SET ZTRANSFERT_0 = 2, ZTRANSDATE_0 = GETDATE()
+                        WHERE {pk_column} IN ({placeholders})
+                    """
+                    sql_cursor.execute(update_sql, batch)
+                    conn.commit()
+        except Exception as e:
+            logger.error(f"Failed to mark transferred for {table}: {e}")
+
+    def _export_to_sqlite(self, sql_cursor, sqlite_cur, table, full_table, site):
+        """Fetches data from SQL Server and inserts into local SQLite."""
+        try:
+            if table in self.parameters.get("site_dependent_tables", []):
+                query = f"SELECT * FROM {full_table} WHERE {self.parameters['site_keys_column'][table]} = ?"
+                sql_cursor.execute(query, (site,))
+            else:
+                query = f"SELECT * FROM {full_table}"
+                sql_cursor.execute(query)
+            
+            columns = [column[0] for column in sql_cursor.description]
+            columns_def = ", ".join([f'"{col}" TEXT' for col in columns])
+            
+            sqlite_cur.execute(f"DROP TABLE IF EXISTS {table}")
+            sqlite_cur.execute(f"CREATE TABLE {table} ({columns_def})")
+            
+            rows = sql_cursor.fetchall()
+            if rows:
+                placeholders = ", ".join(["?"] * len(columns))
+                insert_query = f"INSERT INTO {table} VALUES ({placeholders})"
+                
+                for row in rows:
+                    sqlite_cur.execute(insert_query, tuple(str(x) if x is not None else None for x in row))
+                logger.info(f"Exported {len(rows)} rows for {table}")
+        except Exception as e:
+            logger.error(f"Failed to export {table} to SQLite: {e}")
+
+    def run_sync(self):
+        """Monitors for changes and emails CSVs."""
+        logger.info("Starting sync monitoring...")
+        
+        site_emails = self.parameters.get("site_emails", {})
+        if not site_emails:
+            logger.warning("No site emails configured. Skipping sync.")
+            return
+
+        try:
+            with self._get_sql_connection() as conn:
+                sql_cursor = conn.cursor()
+                
+                site_changes = {}
+                generic_changes = {}
+                
+                for table in self.tables_to_sync:
+                    self._process_table_changes(conn, sql_cursor, table, site_changes, generic_changes)
+                
+                # Send Emails
+                for site, email in site_emails.items():
+                    changes = generic_changes.copy()
+                    if site in site_changes:
+                        changes.update(site_changes[site])
+                        
+                    if changes:
+                        csv_path = self._export_consolidated_csv(changes, site)
+                        if csv_path:
+                            self._send_email_report(site, email, changes, csv_path)
+                    else:
+                        logger.info(f"No changes for site {site}")
+                        
+        except Exception as e:
+            logger.error(f"Sync run failed: {e}")
+
+    def _process_table_changes(self, conn, sql_cursor, table, site_changes, generic_changes):
+        """Detects changes in a single table."""
+        full_table = f"{self.sql_config.get('schema', 'dbo')}.{table}"
+        
+        try:
+            # Check for tracking columns first
+            sql_cursor.execute(f"SELECT TOP 1 * FROM {full_table}")
+            columns = [col[0] for col in sql_cursor.description]
+            
+            if not all(k in columns for k in ['ZTRANSFERT_0', 'ZTRANSDATE_0', 'UPDDATTIM_0']):
+                return
+
+            is_site_dependent = table in self.parameters.get("site_dependent_tables", [])
+            
+            if is_site_dependent:
+                site_col = self.parameters['site_keys_column'].get(table)
+                if not site_col: return
+
+                for site in self.parameters.get("sites", []):
+                    query = f"""
+                        SELECT * FROM {full_table}
+                        WHERE {site_col} = ? AND (ZTRANSFERT_0 = 0 OR (ZTRANSFERT_0 = 2 AND UPDDATTIM_0 > ZTRANSDATE_0))
+                    """
+                    sql_cursor.execute(query, (site,))
+                    rows = sql_cursor.fetchall()
+                    
+                    if rows:
+                        if site not in site_changes: site_changes[site] = {}
+                        site_changes[site][table] = (columns, rows)
+                        self._update_tracking_columns(conn, sql_cursor, full_table, table, columns, rows)
+            else:
+                query = f"""
+                    SELECT * FROM {full_table}
+                    WHERE ZTRANSFERT_0 = 0 OR (ZTRANSFERT_0 = 2 AND UPDDATTIM_0 > ZTRANSDATE_0)
+                """
+                sql_cursor.execute(query)
+                rows = sql_cursor.fetchall()
+                
+                if rows:
+                    generic_changes[table] = (columns, rows)
+                    self._update_tracking_columns(conn, sql_cursor, full_table, table, columns, rows)
+
+        except Exception as e:
+            logger.error(f"Error processing changes for {table}: {e}")
+
+    def _update_tracking_columns(self, conn, sql_cursor, full_table, table, columns, rows):
+        """Updates ZTRANSFERT_0 and ZTRANSDATE_0 for synced rows."""
+        # Determine PK
+        if table in self.parameters.get("site_dependent_tables", []):
+            pk_col = self.parameters['site_keys_column'].get(table)
+        else:
+            pk_col = self.parameters.get("primary_key_column", "AUUID_0")
+
+        if pk_col not in columns: return
+
+        pk_idx = columns.index(pk_col)
+        pk_values = [row[pk_idx] for row in rows]
+        
+        batch_size = 1000
+        for i in range(0, len(pk_values), batch_size):
+            batch = pk_values[i:i + batch_size]
+            placeholders = ",".join("?" for _ in batch)
+            sql = f"UPDATE {full_table} SET ZTRANSFERT_0 = 2, ZTRANSDATE_0 = GETDATE() WHERE {pk_col} IN ({placeholders})"
+            sql_cursor.execute(sql, batch)
+            conn.commit()
+
+    def _export_consolidated_csv(self, changes_dict, site):
+        try:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"sync_{site}_{timestamp}.csv"
+            filepath = os.path.join(DELTA_FOLDER, filename)
+            
+            with open(filepath, 'w', newline='', encoding='utf-8-sig') as f:
+                writer = csv.writer(f)
+                for table, (columns, rows) in changes_dict.items():
+                    header = ['TABLE_NAME'] + columns
+                    writer.writerow(header)
+                    for row in rows:
+                        row_data = [table] + [str(x) if x is not None else '' for x in row]
+                        writer.writerow(row_data)
+            logger.info(f"Created delta CSV: {filepath}")
+            return filepath
+        except Exception as e:
+            logger.error(f"Failed to write CSV: {e}")
+            return None
+
+    def _send_email_report(self, site, email, changes, csv_path):
+        total_records = sum(len(rows) for _, (_, rows) in changes.items())
+        subject = f"Database Sync - {site} - {len(changes)} tables, {total_records} records"
+        
+        body = f"Sync Report for {site}\n\n"
+        for table, (_, rows) in changes.items():
+            body += f"{table}: {len(rows)} records\n"
+            
+        self.email_sender.send_email(email, subject, body, csv_path)
+
         """
         Initialize the sync manager.
         
