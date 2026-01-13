@@ -5,6 +5,7 @@ from .model import FolderSettings, SiteConfigModel
 from sqlalchemy.orm import Session
 from ..database.session import get_db
 from ..database.models import ConfigurationsFolders, SiteConfig
+import sys
 
 
 logging.basicConfig(
