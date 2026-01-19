@@ -1034,7 +1034,9 @@ class PythonService(win32serviceutil.ServiceFramework):
                         "TAXLINK",
                         "SFOOTINV",
                         "SORDERQ",
-                        "SORDERP"
+                        "SORDERP",
+                        "TABMODELIV",
+                        ""
                     ]
         
         
