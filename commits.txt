@@ -1,0 +1,20 @@
+6a3dca1 - Ntchinda-Giscard (2 hours ago): feat: Implement a Windows service for SQL Server to SQLite data synchronization, configuration management, and email notifications.
+e9ff77c - Ntchinda-Giscard (4 days ago): feat: Implement a Windows service for database synchronization from SQL Server to local SQLite and email notifications.
+3c59ac2 - Ntchinda-Giscard (10 days ago): feat: add folder picker and subfolder scanning functionality in main process
+2d43761 - Ntchinda-Giscard (10 days ago): feat: add folder picker and subfolder scanning functionality in main process
+6b93bf8 - Ntchinda-Giscard (10 days ago): feat: add folder picker and subfolder scanning functionality in main process
+7eae9b1 - Ntchinda-Giscard (11 days ago): feat: add folder picker and subfolder scanning functionality in main process
+f2aa45e - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+6d33fb3 - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+169431f - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+20acc8d - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+7b718ce - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+a5e3601 - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+59b1d07 - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+8e3ead9 - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+f52d086 - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+ec29f92 - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+1571b8d - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+074847b - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+da8dd11 - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering
+9ef7fd3 - Ntchinda-Giscard (6 weeks ago): update query in DatabaseSync to use dynamic key columns for site filtering

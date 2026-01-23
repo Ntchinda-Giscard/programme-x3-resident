@@ -1035,7 +1035,9 @@ class PythonService(win32serviceutil.ServiceFramework):
                         "SFOOTINV",
                         "SORDERQ",
                         "SORDERP",
-                        "TABMODELIV"
+                        "TABMODELIV",
+                        "SDELIVERY",
+                        "SDELIVERYD"
                     ]
         
         
