@@ -1000,11 +1000,13 @@ class PythonService(win32serviceutil.ServiceFramework):
             with open(rf"{log_folder}\service_log.txt", "a") as f:
                 site_config_dict = {}
                 tables_to_sync = [
-                        "ITMMASTER",
-                        "ITMFACILIT", 
-                        "FACILITY",
-                        "ITMSALES",
-                        "BPARTNER",
+                    "SDELIVERY",
+                    "SDELIVERYD",
+                    "ITMMASTER",
+                    "ITMFACILIT", 
+                    "FACILITY",
+                    "ITMSALES",
+                    "BPARTNER",
                         "BPCUSTOMER",
                         "BPCUSTMVT",
                         "BPDLVCUST",
@@ -1042,8 +1044,7 @@ class PythonService(win32serviceutil.ServiceFramework):
                         "SORDERQ",
                         "SORDERP",
                         "TABMODELIV",
-                        "SDELIVERY",
-                        "SDELIVERYD"
+                        
 
                     ]
         
