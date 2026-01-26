@@ -156,292 +156,6 @@ class EmailSender:
             logger.error(f"Failed to send email to {to_email}: {e}")
 
 class DatabaseSync:
-    def __init__(
-        self, 
-        sql_server_config: Dict[str, str],
-        tables_to_sync: List[str],
-        email_sender: EmailSender,
-        parameters: Optional[Dict[str, Any]],
-        local_db_path: str = LOCAL_DB_PATH,
-        zip_folder: str = ZIP_FOLDER
-    ):
-        self.sql_config = sql_server_config
-        self.parameters = parameters or {}
-        self.zip_folder = zip_folder
-        self.email_sender = email_sender
-        self.tables_to_sync = tables_to_sync
-        self.local_db_path = local_db_path
-        
-        # Create folders
-        Path(self.zip_folder).mkdir(parents=True, exist_ok=True)
-        Path(DELTA_FOLDER).mkdir(parents=True, exist_ok=True)
-        os.makedirs(local_db_path, exist_ok=True)
-        
-        # Initialize
-        try:
-            self._init_first_launch(self.tables_to_sync)
-        except Exception as e:
-            logger.error(f"Initialization failed: {e}")
-
-    def _get_sql_connection(self):
-        """Creates a connection to the remote SQL Server."""
-        try:
-            dsn = self.sql_config.get('dsn')
-            username = self.sql_config.get('username')
-            password = self.sql_config.get('password')
-            
-            if dsn:
-                if username and password:
-                    conn_str = f"DSN={dsn};UID={username};PWD={password}"
-                else:
-                    conn_str = f"DSN={dsn};Trusted_Connection=yes"
-            else:
-                server = self.sql_config.get('server')
-                database = self.sql_config.get('database')
-                driver = self.sql_config.get('driver', 'ODBC Driver 17 for SQL Server')
-                
-                if username and password:
-                    conn_str = f"DRIVER={{{driver}}};SERVER={server};DATABASE={database};UID={username};PWD={password}"
-                else:
-                    conn_str = f"DRIVER={{{driver}}};SERVER={server};DATABASE={database};Trusted_Connection=yes"
-            
-            # Mask password for logging
-            safe_conn_str = conn_str.replace(password, "***") if password else conn_str
-            logger.info(f"Connecting to SQL Server: {safe_conn_str}")
-            
-            conn = pyodbc.connect(conn_str, timeout=30)
-            conn.setdecoding(pyodbc.SQL_CHAR, encoding='latin-1')
-            conn.setdecoding(pyodbc.SQL_WCHAR, encoding='latin-1')
-            conn.setencoding('latin-1')
-            return conn
-        except Exception as e:
-            logger.error(f"Failed to connect to SQL Server: {e}")
-            raise
-
-    def _init_first_launch(self, tables: List[str]):
-        """Exports tables to SQLite for the first time if needed."""
-        if not self.parameters.get("sites"):
-            logger.warning("No sites defined in parameters.")
-            return
-
-        for site in self.parameters["sites"]:
-            logger.info(f"checking/exporting tables for site: {site}")
-            site_db_folder = os.path.join(self.local_db_path, site)
-            os.makedirs(site_db_folder, exist_ok=True)
-            
-            sqlite_path = os.path.join(site_db_folder, "local_data.db")
-            
-            with sqlite3.connect(sqlite_path) as sqlite_conn:
-                sqlite_cur = sqlite_conn.cursor()
-                
-                try:
-                    with self._get_sql_connection() as conn:
-                        sql_cursor = conn.cursor()
-                        
-                        for table in tables:
-                            full_table = f"{self.sql_config.get('schema', 'dbo')}.{table}"
-                            
-                            try:
-                                # Check tracking columns presence
-                                sql_cursor.execute(f"SELECT TOP 1 * FROM {full_table}")
-                                columns = [column[0] for column in sql_cursor.description]
-                                has_tracking = 'ZTRANSFERT_0' in columns and 'ZTRANSDATE_0' in columns
-
-                                # Determine Primary Key
-                                if table in self.parameters.get("site_dependent_tables", []):
-                                    pk_column = self.parameters['site_keys_column'][table]
-                                else:
-                                    pk_column = self.parameters.get("primary_key_column", "AUUID_0")
-
-                                # Update headers in SQL Server
-                                if has_tracking and pk_column in columns:
-                                    self._mark_as_transferred(sql_cursor, conn, table, full_table, pk_column, site)
-
-                                # Export Data
-                                self._export_to_sqlite(sql_cursor, sqlite_cur, table, full_table, site)
-                                
-                            except Exception as table_err:
-                                logger.error(f"Error processing table {table} for site {site}: {table_err}")
-                        
-                        sqlite_conn.commit()
-                except Exception as db_err:
-                    logger.error(f"Database operation failed during init: {db_err}")
-
-    def _mark_as_transferred(self, sql_cursor, conn, table, full_table, pk_column, site):
-        """Marks records as transferred in SQL Server."""
-        try:
-            if table in self.parameters.get("site_dependent_tables", []):
-                query = f"SELECT {pk_column} FROM {full_table} WHERE {self.parameters['site_keys_column'][table]} = ?"
-                sql_cursor.execute(query, (site,))
-            else:
-                query = f"SELECT {pk_column} FROM {full_table}"
-                sql_cursor.execute(query)
-            
-            pk_values = [row[0] for row in sql_cursor.fetchall()]
-            
-            if pk_values:
-                logger.debug(f"Marking {len(pk_values)} rows as transferred in {table}")
-                batch_size = 1000
-                for i in range(0, len(pk_values), batch_size):
-                    batch = pk_values[i:i + batch_size]
-                    placeholders = ",".join("?" for _ in batch)
-                    update_sql = f"""
-                        UPDATE {full_table}
-                        SET ZTRANSFERT_0 = 2, ZTRANSDATE_0 = GETDATE()
-                        WHERE {pk_column} IN ({placeholders})
-                    """
-                    sql_cursor.execute(update_sql, batch)
-                    conn.commit()
-        except Exception as e:
-            logger.error(f"Failed to mark transferred for {table}: {e}")
-
-    def _export_to_sqlite(self, sql_cursor, sqlite_cur, table, full_table, site):
-        """Fetches data from SQL Server and inserts into local SQLite."""
-        try:
-            if table in self.parameters.get("site_dependent_tables", []):
-                query = f"SELECT * FROM {full_table} WHERE {self.parameters['site_keys_column'][table]} = ?"
-                sql_cursor.execute(query, (site,))
-            else:
-                query = f"SELECT * FROM {full_table}"
-                sql_cursor.execute(query)
-            
-            columns = [column[0] for column in sql_cursor.description]
-            columns_def = ", ".join([f'"{col}" TEXT' for col in columns])
-            
-            sqlite_cur.execute(f"DROP TABLE IF EXISTS {table}")
-            sqlite_cur.execute(f"CREATE TABLE {table} ({columns_def})")
-            
-            rows = sql_cursor.fetchall()
-            if rows:
-                placeholders = ", ".join(["?"] * len(columns))
-                insert_query = f"INSERT INTO {table} VALUES ({placeholders})"
-                
-                for row in rows:
-                    sqlite_cur.execute(insert_query, tuple(str(x) if x is not None else None for x in row))
-                logger.info(f"Exported {len(rows)} rows for {table}")
-        except Exception as e:
-            logger.error(f"Failed to export {table} to SQLite: {e}")
-
-    def run_sync(self):
-        """Monitors for changes and emails CSVs."""
-        logger.info("Starting sync monitoring...")
-        
-        site_emails = self.parameters.get("site_emails", {})
-        if not site_emails:
-            logger.warning("No site emails configured. Skipping sync.")
-            return
-
-        try:
-            with self._get_sql_connection() as conn:
-                sql_cursor = conn.cursor()
-                
-                site_changes = {}
-                generic_changes = {}
-                
-                for table in self.tables_to_sync:
-                    self._process_table_changes(conn, sql_cursor, table, site_changes, generic_changes)
-                
-                # Send Emails
-                for site, email in site_emails.items():
-                    changes = generic_changes.copy()
-                    if site in site_changes:
-                        changes.update(site_changes[site])
-                        
-                    if changes:
-                        csv_path = self._export_consolidated_csv(changes, site)
-                        if csv_path:
-                            self._send_email_report(site, email, changes, csv_path)
-                    else:
-                        logger.info(f"No changes for site {site}")
-                        
-        except Exception as e:
-            logger.error(f"Sync run failed: {e}")
-
-    def _process_table_changes(self, conn, sql_cursor, table, site_changes, generic_changes):
-        """Detects changes in a single table."""
-        full_table = f"{self.sql_config.get('schema', 'dbo')}.{table}"
-        
-        try:
-            # Check for tracking columns first
-            sql_cursor.execute(f"SELECT TOP 1 * FROM {full_table}")
-            columns = [col[0] for col in sql_cursor.description]
-            
-            if not all(k in columns for k in ['ZTRANSFERT_0', 'ZTRANSDATE_0', 'UPDDATTIM_0']):
-                return
-
-            is_site_dependent = table in self.parameters.get("site_dependent_tables", [])
-            
-            if is_site_dependent:
-                site_col = self.parameters['site_keys_column'].get(table)
-                if not site_col: return
-
-                for site in self.parameters.get("sites", []):
-                    query = f"""
-                        SELECT * FROM {full_table}
-                        WHERE {site_col} = ? AND (ZTRANSFERT_0 = 0 OR (ZTRANSFERT_0 = 2 AND UPDDATTIM_0 > ZTRANSDATE_0))
-                    """
-                    sql_cursor.execute(query, (site,))
-                    rows = sql_cursor.fetchall()
-                    
-                    if rows:
-                        if site not in site_changes: site_changes[site] = {}
-                        site_changes[site][table] = (columns, rows)
-                        self._update_tracking_columns(conn, sql_cursor, full_table, table, columns, rows)
-            else:
-                query = f"""
-                    SELECT * FROM {full_table}
-                    WHERE ZTRANSFERT_0 = 0 OR (ZTRANSFERT_0 = 2 AND UPDDATTIM_0 > ZTRANSDATE_0)
-                """
-                sql_cursor.execute(query)
-                rows = sql_cursor.fetchall()
-                
-                if rows:
-                    generic_changes[table] = (columns, rows)
-                    self._update_tracking_columns(conn, sql_cursor, full_table, table, columns, rows)
-
-        except Exception as e:
-            logger.error(f"Error processing changes for {table}: {e}")
-
-    def _update_tracking_columns(self, conn, sql_cursor, full_table, table, columns, rows):
-        """Updates ZTRANSFERT_0 and ZTRANSDATE_0 for synced rows."""
-        # Determine PK
-        if table in self.parameters.get("site_dependent_tables", []):
-            pk_col = self.parameters['site_keys_column'].get(table)
-        else:
-            pk_col = self.parameters.get("primary_key_column", "AUUID_0")
-
-        if pk_col not in columns: return
-
-        pk_idx = columns.index(pk_col)
-        pk_values = [row[pk_idx] for row in rows]
-        
-        batch_size = 1000
-        for i in range(0, len(pk_values), batch_size):
-            batch = pk_values[i:i + batch_size]
-            placeholders = ",".join("?" for _ in batch)
-            sql = f"UPDATE {full_table} SET ZTRANSFERT_0 = 2, ZTRANSDATE_0 = GETDATE() WHERE {pk_col} IN ({placeholders})"
-            sql_cursor.execute(sql, batch)
-            conn.commit()
-
-    def _export_consolidated_csv(self, changes_dict, site):
-        try:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"sync_{site}_{timestamp}.csv"
-            filepath = os.path.join(DELTA_FOLDER, filename)
-            
-            with open(filepath, 'w', newline='', encoding='utf-8-sig') as f:
-                writer = csv.writer(f)
-                for table, (columns, rows) in changes_dict.items():
-                    header = ['TABLE_NAME'] + columns
-                    writer.writerow(header)
-                    for row in rows:
-                        row_data = [table] + [str(x) if x is not None else '' for x in row]
-                        writer.writerow(row_data)
-            logger.info(f"Created delta CSV: {filepath}")
-            return filepath
-        except Exception as e:
-            logger.error(f"Failed to write CSV: {e}")
-            return None
 
     def _send_email_report(self, site, email, changes, csv_path):
         total_records = sum(len(rows) for _, (_, rows) in changes.items())
@@ -453,13 +167,18 @@ class DatabaseSync:
             
         self.email_sender.send_email(email, subject, body, csv_path)
 
+    def __init__(
+        self,
+        sql_server_config,
+        tables_to_sync,
+        local_db_path,
+        zip_folder,
+        email_config,
+        parameters,
+        fs=None
+    ):
         """
         Initialize the sync manager.
-        
-        :param sql_server_config: Dictionary containing SQL Server connection details
-        :param local_db_path: Path to the local SQLite database
-        :param zip_folder: Folder where the zipped database will be saved
-        :param email_config: Optional email configuration for sending the zip file
         """
         self.sql_config = sql_server_config
         self.parameters = parameters
@@ -467,16 +186,14 @@ class DatabaseSync:
         self.email_config = email_config
         self.fs = fs
         self.tables_to_sync = tables_to_sync
+        self.local_db_path = local_db_path
         
         # Create folders if they don't exist
         Path(self.zip_folder).mkdir(parents=True, exist_ok=True)
         Path(DELTA_FOLDER).mkdir(parents=True, exist_ok=True)
-        os.makedirs(LOCAL_DB_PATH, exist_ok=True)
+        os.makedirs(self.local_db_path, exist_ok=True)
         
-        # Initialize local tracking table
-        # self._init_local_db()
-        
-        #  Initialize first launch flag
+        # Initialize first launch
         self._init_first_launch(self.tables_to_sync)
 
     def _get_sql_connection(self):
@@ -538,98 +255,112 @@ class DatabaseSync:
                 sql_cursor = conn.cursor()
                 
                 for table in tables:
-                    # Determine full table name based on site dependency
-                    full_table = f"{self.sql_config['schema']}.{table}" # type: ignore
+                    try:
+                        # Determine full table name based on site dependency
+                        full_table = f"{self.sql_config['schema']}.{table}" # type: ignore
 
-                    # First, check if table has tracking columns
-                    check_columns_query = f"SELECT TOP 1 * FROM {full_table}"
-                    sql_cursor.execute(check_columns_query)
-                    columns = [column[0] for column in sql_cursor.description]
-                    has_tracking = 'ZTRANSFERT_0' in columns and 'ZTRANSDATE_0' in columns
-
-                    # Determine the primary key column
-                    if table in self.parameters["site_dependent_tables"]: # type: ignore
-                        pk_column = self.parameters['site_keys_column'][table] # type: ignore
-                    else:
-                        pk_column = self.parameters["primary_key_column"] # type: ignore
-
-                    # **STEP 1: UPDATE SQL SERVER FIRST (if has tracking columns)**
-                    if has_tracking and pk_column in columns:
                         if self.fs:
-                            self.fs.write(f"[*] Updating tracking columns in SQL Server for {table}...\n")
-                        
-                        # Get list of primary keys to update
-                        if table in self.parameters["site_dependent_tables"]: # type: ignore
-                            pk_query = f"SELECT {pk_column} FROM {full_table} WHERE {self.parameters['site_keys_column'][table]} = ?" # type: ignore
-                            sql_cursor.execute(pk_query, (site,))
-                        else:
-                            pk_query = f"SELECT {pk_column} FROM {full_table}"
-                            sql_cursor.execute(pk_query)
-                        
-                        pk_values = [row[0] for row in sql_cursor.fetchall()]
-                        
-                        if len(pk_values) > 0:
-                            # Update in batches to avoid parameter limit
-                            batch_size = 1000
-                            total_updated = 0
-                            
-                            for i in range(0, len(pk_values), batch_size):
-                                batch = pk_values[i:i + batch_size]
-                                placeholders_batch = ",".join("?" for _ in batch)
+                            self.fs.write(f"[*] Processing table: {table} ({full_table})\n")
 
-                                update_sql = f"""
-                                    UPDATE {full_table}
-                                    SET 
-                                        ZTRANSFERT_0 = 2,
-                                        ZTRANSDATE_0 = GETDATE()
-                                    WHERE {pk_column} IN ({placeholders_batch})
-                                """
-                                sql_cursor.execute(update_sql, batch)
-                                conn.commit()
-                                total_updated += len(batch)
+                        # First, check if table has tracking columns
+                        try:
+                            check_columns_query = f"SELECT TOP 1 * FROM {full_table}"
+                            sql_cursor.execute(check_columns_query)
+                        except Exception as e:
+                            if self.fs:
+                                self.fs.write(f"    [!] TABLE NOT FOUND or error accessing {full_table}: {e}\n")
+                            continue
+
+                        columns = [column[0] for column in sql_cursor.description]
+                        has_tracking = 'ZTRANSFERT_0' in columns and 'ZTRANSDATE_0' in columns
+
+                        if self.fs:
+                            self.fs.write(f"    Columns found: {len(columns)}, has_tracking: {has_tracking}\n")
+
+                        # Determine the primary key column
+                        if table in self.parameters["site_dependent_tables"]: # type: ignore
+                            pk_column = self.parameters['site_keys_column'][table] # type: ignore
+                        else:
+                            pk_column = self.parameters["primary_key_column"] # type: ignore
+
+                        # **STEP 1: UPDATE SQL SERVER FIRST (if has tracking columns)**
+                        if has_tracking and pk_column in columns:
+                            if self.fs:
+                                self.fs.write(f"    Updating tracking columns in SQL Server for {table}...\n")
+                            
+                            # Get list of primary keys to update
+                            if table in self.parameters["site_dependent_tables"]: # type: ignore
+                                pk_query = f"SELECT {pk_column} FROM {full_table} WHERE {self.parameters['site_keys_column'][table]} = ?" # type: ignore
+                                sql_cursor.execute(pk_query, (site,))
+                            else:
+                                pk_query = f"SELECT {pk_column} FROM {full_table}"
+                                sql_cursor.execute(pk_query)
+                            
+                            pk_values = [row[0] for row in sql_cursor.fetchall()]
+                            
+                            if len(pk_values) > 0:
+                                # Update in batches to avoid parameter limit
+                                batch_size = 1000
+                                total_updated = 0
+                                
+                                for i in range(0, len(pk_values), batch_size):
+                                    batch = pk_values[i:i + batch_size]
+                                    placeholders_batch = ",".join("?" for _ in batch)
+
+                                    update_sql = f"""
+                                        UPDATE {full_table}
+                                        SET 
+                                            ZTRANSFERT_0 = 2,
+                                            ZTRANSDATE_0 = GETDATE()
+                                        WHERE {pk_column} IN ({placeholders_batch})
+                                    """
+                                    sql_cursor.execute(update_sql, batch)
+                                    conn.commit()
+                                    total_updated += len(batch)
+                                
+                                if self.fs:
+                                    self.fs.write(f"    Updated {total_updated} rows in SQL Server.\n")
+
+                        # **STEP 2: NOW FETCH THE UPDATED DATA**
+                        if table in self.parameters["site_dependent_tables"]: # type: ignore
+                            query = f"SELECT * FROM {full_table} WHERE {self.parameters['site_keys_column'][table]} = ?" # type: ignore
+                            sql_cursor.execute(query, (site,))
+                        else:
+                            query = f"SELECT * FROM {full_table}"
+                            sql_cursor.execute(query)
+                        
+                        # Create table in SQLite
+                        columns_def = ", ".join([f'"{col}" TEXT' for col in columns])
+                        sqlite_cur.execute(f"DROP TABLE IF EXISTS {table}")
+                        sqlite_cur.execute(f"CREATE TABLE {table} ({columns_def})")
+
+                        # Fetch all data
+                        if self.fs:
+                            self.fs.write(f"    Fetching data for {table}...\n")
+                        rows = sql_cursor.fetchall()
+                        
+                        if len(rows) > 0:
+                            if self.fs:
+                                self.fs.write(f"    Found {len(rows)} records. Syncing to SQLite...\n")
+                            placeholders = ", ".join(["?"] * len(columns))
+                            insert_query = f"INSERT INTO {table} VALUES ({placeholders})"
+
+                            count = 0
+                            for row in rows:
+                                sqlite_cur.execute(insert_query, tuple(str(x) if x is not None else None for x in row))
+                                count += 1
+                                if count % 1000 == 0 and self.fs:
+                                    self.fs.write(f"    Progress: {count}/{len(rows)} records...\n")
                             
                             if self.fs:
-                                self.fs.write(f"    Updated {total_updated} rows in SQL Server (in {(len(pk_values) + batch_size - 1) // batch_size} batches)\n")
-
-                    # **STEP 2: NOW FETCH THE UPDATED DATA**
-                    if table in self.parameters["site_dependent_tables"]: # type: ignore
+                                self.fs.write(f"    Successfully exported {len(rows)} records into {table}.\n")
+                        else:
+                            if self.fs:
+                                self.fs.write(f"    No records found for {table}.\n")
+                    except Exception as e:
                         if self.fs:
-                            self.fs.write(f"[*] Exporting site-dependent table {table} for site {site} to local DB...\n")
-                        
-                        query = f"SELECT * FROM {full_table} WHERE {self.parameters['site_keys_column'][table]} = ?" # type: ignore
-                        sql_cursor.execute(query, (site,))
-                        
-                    else:
-                        if self.fs:
-                            self.fs.write(f"[*] Exporting table {table} to local DB...\n")
-
-                        query = f"SELECT * FROM {full_table}"
-                        sql_cursor.execute(query)
-                    
-                    # Fetch column definitions from SQL Server
-                    columns = [column[0] for column in sql_cursor.description]
-
-                    # Create table in SQLite
-                    columns_def = ", ".join([f'"{col}" TEXT' for col in columns])
-                    sqlite_cur.execute(f"DROP TABLE IF EXISTS {table}")
-                    sqlite_cur.execute(f"CREATE TABLE {table} ({columns_def})")
-
-                    # Fetch all data (now with updated values!)
-                    rows = sql_cursor.fetchall()
-                    
-                    if len(rows) > 0:
-                        placeholders = ", ".join(["?"] * len(columns))
-                        insert_query = f"INSERT INTO {table} VALUES ({placeholders})"
-
-                        # Insert into SQLite
-                        for row in rows:
-                            sqlite_cur.execute(insert_query, tuple(str(x) if x is not None else None for x in row))
-                        
-                        if self.fs:
-                            self.fs.write(f"    Inserted {len(rows)} records into {table} (SQLite).\n")
-                    else:
-                        if self.fs:
-                            self.fs.write(f"    No records found for {table}.\n")
+                            self.fs.write(f"    [!] Error processing {table}: {e}\n")
+                        continue
                 
                 sqlite_conn.commit()
 
@@ -743,7 +474,11 @@ class DatabaseSync:
                 
                 if not has_tracking:
                     if self.fs:
-                        self.fs.write(f"[*] Table {table} does not have tracking columns. Skipping.\n")
+                        missing = []
+                        if 'ZTRANSFERT_0' not in columns: missing.append('ZTRANSFERT_0')
+                        if 'ZTRANSDATE_0' not in columns: missing.append('ZTRANSDATE_0')
+                        if 'UPDDATTIM_0' not in columns: missing.append('UPDDATTIM_0')
+                        self.fs.write(f"[*] Table {table} is missing columns for incremental sync: {', '.join(missing)}. Skipping delta sync.\n")
                     continue
                 
                 # Determine if site-dependent
