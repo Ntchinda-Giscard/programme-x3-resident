@@ -993,7 +993,13 @@ class PythonService(win32serviceutil.ServiceFramework):
         os.makedirs(log_folder, exist_ok=True)
         
         
-        tables_to_sync = [
+              
+            
+        
+        while self.running:
+            with open(rf"{log_folder}\service_log.txt", "a") as f:
+                site_config_dict = {}
+                tables_to_sync = [
                         "ITMMASTER",
                         "ITMFACILIT", 
                         "FACILITY",
@@ -1041,12 +1047,7 @@ class PythonService(win32serviceutil.ServiceFramework):
 
                     ]
         
-        
-            
-        
-        while self.running:
-            with open(rf"{log_folder}\service_log.txt", "a") as f:
-                site_config_dict = {}
+  
                 try:
                     db_path = rf"{LOCAL_DB_PATH}\config.db"
                     config_conn = sqlite3.connect(db_path)
