@@ -268,7 +268,9 @@ class DatabaseSync:
                             sql_cursor.execute(check_columns_query)
                         except Exception as e:
                             if self.fs:
-                                self.fs.write(f"    [!] TABLE NOT FOUND or error accessing {full_table}: {e}\n")
+                                self.fs.write(f"    [!] ERROR: TABLE '{table}' NOT FOUND or error accessing {full_table}\n")
+                                self.fs.write(f"    [!] Exception details: {type(e).__name__}: {str(e)}\n")
+                                self.fs.write(f"    [!] SKIPPING table '{table}'\n\n")
                             continue
 
                         columns = [column[0] for column in sql_cursor.description]
@@ -276,6 +278,14 @@ class DatabaseSync:
 
                         if self.fs:
                             self.fs.write(f"    Columns found: {len(columns)}, has_tracking: {has_tracking}\n")
+                            if not has_tracking:
+                                missing_cols = []
+                                if 'ZTRANSFERT_0' not in columns:
+                                    missing_cols.append('ZTRANSFERT_0')
+                                if 'ZTRANSDATE_0' not in columns:
+                                    missing_cols.append('ZTRANSDATE_0')
+                                self.fs.write(f"    [!] WARNING: Table '{table}' is missing tracking columns: {', '.join(missing_cols)}\n")
+                                self.fs.write(f"    [!] Table will still be synced but without automatic tracking updates\n")
 
                         # Determine the primary key column
                         if table in self.parameters["site_dependent_tables"]: # type: ignore
@@ -461,10 +471,19 @@ class DatabaseSync:
             for table in self.tables_to_sync:
                 full_table = f"{self.sql_config['schema']}.{table}"
                 
+                if self.fs:
+                    self.fs.write(f"[*] Checking table: {table} ({full_table})\\n")
+                
                 # Check if table has tracking columns
-                check_query = f"SELECT TOP 1 * FROM {full_table}"
-                sql_cursor.execute(check_query)
-                columns = [column[0] for column in sql_cursor.description]
+                try:
+                    check_query = f"SELECT TOP 1 * FROM {full_table}"
+                    sql_cursor.execute(check_query)
+                    columns = [column[0] for column in sql_cursor.description]
+                except Exception as e:
+                    if self.fs:
+                        self.fs.write(f"    [!] ERROR: Cannot access table '{table}': {type(e).__name__}: {str(e)}\\n")
+                        self.fs.write(f"    [!] SKIPPING table '{table}'\\n\\n")
+                    continue
                 
                 has_tracking = (
                     'ZTRANSFERT_0' in columns and 
@@ -478,7 +497,7 @@ class DatabaseSync:
                         if 'ZTRANSFERT_0' not in columns: missing.append('ZTRANSFERT_0')
                         if 'ZTRANSDATE_0' not in columns: missing.append('ZTRANSDATE_0')
                         if 'UPDDATTIM_0' not in columns: missing.append('UPDDATTIM_0')
-                        self.fs.write(f"[*] Table {table} is missing columns for incremental sync: {', '.join(missing)}. Skipping delta sync.\n")
+                        self.fs.write(f"    [!] Table {table} is missing columns for incremental sync: {', '.join(missing)}. Skipping delta sync.\\n\\n")
                     continue
                 
                 # Determine if site-dependent
