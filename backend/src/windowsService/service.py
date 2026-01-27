@@ -257,7 +257,7 @@ class DatabaseSync:
                 for table in tables:
                     try:
                         # Determine full table name based on site dependency
-                        full_table = f"{self.sql_config['schema']}.{table}" # type: ignore
+                        full_table = f"[{self.sql_config['database']}].[{self.sql_config['schema']}].[{table}]" # type: ignore
 
                         if self.fs:
                             self.fs.write(f"[*] Processing table: {table} ({full_table})\n")
@@ -881,3 +881,5 @@ class PythonService(win32serviceutil.ServiceFramework):
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(PythonService)
+
+
