@@ -3,7 +3,6 @@
 *.txt
 /build
 /dist
-*.spec
 /__pycache__
 __pycache__/
 __pycache__
