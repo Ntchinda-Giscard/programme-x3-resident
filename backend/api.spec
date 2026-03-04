@@ -13,6 +13,7 @@ a = Analysis(
     hiddenimports=[
         'win32serviceutil',
         'win32service',
+        'win32timezone',
         'pywintypes',
         'win32net',
         'win32netcon',
