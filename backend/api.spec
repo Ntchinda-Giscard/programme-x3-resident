@@ -5,7 +5,11 @@ a = Analysis(
     ['api.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    # include service code so get_service_script_path() can find it
+    datas=[
+        ('src/windowsService/service.py', 'src/windowsService'),
+        ('src/windowsService/scheduler.py', 'src/windowsService'),
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
