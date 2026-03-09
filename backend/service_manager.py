@@ -14,12 +14,29 @@ SERVICE_NAME = "WAZAPOS_TEST"
 SERVICE_DISPLAY_NAME = "WAZAPOS_TEST"
 SERVICE_DESCRIPTION = "Runs scheduled tasks for WAZAPOS App"
 
+def ensure_essential_folders():
+    """Ensure all required data folders exist"""
+    base_dir = r"C:\poswaza\temp"
+    folders = [
+        os.path.join(base_dir, "logs"),
+        os.path.join(base_dir, "db"),
+        os.path.join(base_dir, "zip"),
+        os.path.join(base_dir, "delta"),
+    ]
+    for folder in folders:
+        os.makedirs(folder, exist_ok=True)
+    return base_dir
+
+# Initialize folders first
+BASE_DIR = ensure_essential_folders()
+LOG_PATH = os.path.join(BASE_DIR, "logs", "service_log.txt")
+
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(threadName)s',
+    format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler('fastapi.log')
+        logging.FileHandler(LOG_PATH)
     ]
 )
 
@@ -43,10 +60,8 @@ def get_permanent_service_dir():
 
 def log_to_service_file(message):
     """Helper to log messages to the central service log file"""
-    log_dir = r"C:\poswaza\temp\logs"
-    os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, "service_log.txt")
-    with open(log_path, "a") as f:
+    ensure_essential_folders()
+    with open(LOG_PATH, "a") as f:
         from datetime import datetime
         f.write(f"[{datetime.now()}] [MANAGER] {message}\n")
     # Also keep logger for console/standard logging
@@ -408,7 +423,8 @@ def get_service_status():
         }
 
 def reset_service():
-    """Stop, uninstall, and delete all service data and app files"""
+    """Stop, uninstall, and delete app files + ephemeral data (keeps config.db)"""
+    ensure_essential_folders()
     try:
         log_to_service_file(f"Stopping service {SERVICE_NAME}...")
         stop_service()
@@ -424,7 +440,6 @@ def reset_service():
     # Delete app code directory
     try:
         permanent_dir = get_permanent_service_dir()
-        # Go up one level to delete the whole WAZAPOS folder
         wazapos_dir = os.path.dirname(permanent_dir)
         log_to_service_file(f"Deleting app code directory: {wazapos_dir}")
         if os.path.exists(wazapos_dir):
@@ -432,16 +447,39 @@ def reset_service():
     except Exception as e:
         log_to_service_file(f"Error deleting app code: {e}")
         
-    # Delete data directory
-    data_dir = r"C:\poswaza\temp"
-    try:
-        log_to_service_file(f"Deleting data directory: {data_dir}")
-        if os.path.exists(data_dir):
-            shutil.rmtree(data_dir, ignore_errors=True)
-    except Exception as e:
-        log_to_service_file(f"Error deleting data directory: {e}")
-        
-    return "Reset complete. You can now perform a clean install."
+    # Partial cleanup of data directory (KEEP config.db)
+    base_data_dir = r"C:\poswaza\temp"
+    subfolders_to_clear = ["logs", "zip", "delta"]
+    
+    for folder in subfolders_to_clear:
+        target = os.path.join(base_data_dir, folder)
+        try:
+            log_to_service_file(f"Clearing folder: {target}")
+            if os.path.exists(target):
+                shutil.rmtree(target, ignore_errors=True)
+        except Exception as e:
+            log_to_service_file(f"Error clearing {folder}: {e}")
+            
+    # Specialized cleanup for db folder
+    db_folder = os.path.join(base_data_dir, "db")
+    if os.path.exists(db_folder):
+        try:
+            log_to_service_file(f"Cleaning {db_folder} (preserving config.db)...")
+            for item in os.listdir(db_folder):
+                item_path = os.path.join(db_folder, item)
+                if item.lower() == "config.db":
+                    continue
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path, ignore_errors=True)
+                else:
+                    os.remove(item_path)
+        except Exception as e:
+            log_to_service_file(f"Error cleaning db folder: {e}")
+            
+    # Recreate folders we just deleted
+    ensure_essential_folders()
+    
+    return "Reset complete (config.db preserved). You can now perform a clean install."
 
 # For testing
 if __name__ == "__main__":

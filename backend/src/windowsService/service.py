@@ -19,12 +19,18 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Any, Dict, List, Optional, Tuple
 
-# Setup Logging
+# Setup Logging and Folders
 BASE_FOLDER = r"C:\poswaza\temp"
 LOG_FOLDER = os.path.join(BASE_FOLDER, "logs")
-os.makedirs(LOG_FOLDER, exist_ok=True)
+DB_FOLDER = os.path.join(BASE_FOLDER, "db")
+ZIP_FOLDER = os.path.join(BASE_FOLDER, "zip")
+DELTA_FOLDER = os.path.join(BASE_FOLDER, "delta")
 
-log_file_path = os.path.join(LOG_FOLDER, "service.log")
+# Ensure all folders exist at startup
+for folder in [LOG_FOLDER, DB_FOLDER, ZIP_FOLDER, DELTA_FOLDER]:
+    os.makedirs(folder, exist_ok=True)
+
+log_file_path = os.path.join(LOG_FOLDER, "service_log.txt")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,10 +42,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("WazaService")
 
-# Constants
-LOCAL_DB_PATH = os.path.join(BASE_FOLDER, "db")
-ZIP_FOLDER = os.path.join(BASE_FOLDER, "zip")
-DELTA_FOLDER = os.path.join(BASE_FOLDER, "delta")
+# Paths
+LOCAL_DB_PATH = DB_FOLDER
 CONFIG_DB_PATH = os.path.join(LOCAL_DB_PATH, "config.db")
 
 class ConfigLoader:
@@ -737,19 +741,13 @@ class PythonService(win32serviceutil.ServiceFramework):
         """Main service loop."""
         servicemanager.LogInfoMsg("WAZAPOS_TEST - Starting service...")
         
-        BASE_FOLDER = r"C:\poswaza\temp"
-        LOCAL_DB_PATH = rf"{BASE_FOLDER}\db"
-        ZIP_FOLDER = rf"{BASE_FOLDER}\zip"
-        log_folder = rf"{BASE_FOLDER}\logs"
-        
-        os.makedirs(LOCAL_DB_PATH, exist_ok=True)
-        os.makedirs(ZIP_FOLDER, exist_ok=True)
-        os.makedirs(log_folder, exist_ok=True)
+        # Folders are already ensured at the top of the file
         
         syncer = None
         
         while self.running:
-            with open(rf"{log_folder}\service_log.txt", "a") as f:
+            # Re-open the file handle each loop to stay fresh
+            with open(log_file_path, "a") as f:
                 site_config_dict = {}
                 tables_to_sync = [
                     "TABSDHTYP",
