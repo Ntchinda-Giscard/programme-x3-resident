@@ -2,6 +2,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const { spawn, exec } = require("child_process"); // ADD exec HERE
 const path = require("path");
+
 const fs = require("fs");
 const isDev = require("electron-is-dev");
 const isWindows = process.platform === "win32";

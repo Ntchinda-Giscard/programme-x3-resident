@@ -27,6 +27,7 @@ logger.info(f'Creating app.db...')
 Base.metadata.create_all(bind=engine)
 logger.info(f'Created app.db')
 
+
 app = FastAPI(
     title="Service Manager API",
     description="API to manage local services (install, uninstall, start, stop, status)",
