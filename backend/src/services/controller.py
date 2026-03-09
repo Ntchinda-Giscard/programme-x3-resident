@@ -138,3 +138,24 @@ async def stop_service():
     except Exception as e:
         logger.error(f"=== CONTROLLER: Error stopping service: {e} ===")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@service_router.post("/reset", response_model=ServiceResponse)
+async def reset_service():
+    """Stop, uninstall, and delete all service data and app files"""
+    try:
+        logger.info("=== CONTROLLER: Starting service reset request ===")
+        result = service_manager.reset_service()
+        logger.info(f"=== CONTROLLER: Service manager returned: {result} ===")
+        
+        if result is None:
+            logger.error("=== CONTROLLER: Received None from reset_service! ===")
+            raise HTTPException(
+                status_code=500, 
+                detail="Service reset returned no result"
+            )
+        
+        return ServiceResponse(message=result)
+    except Exception as e:
+        logger.error(f"=== CONTROLLER: Error resetting service: {e} ===")
+        raise HTTPException(status_code=500, detail=str(e))

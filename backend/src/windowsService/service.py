@@ -469,7 +469,7 @@ class DatabaseSync:
             generic_changes = {}  # {table: (columns, rows)} - for non-site tables
             
             for table in self.tables_to_sync:
-                full_table = f"{self.sql_config['schema']}.{table}"
+                full_table = f"[{self.sql_config['database']}].[{self.sql_config['schema']}].[{table}]"
                 
                 if self.fs:
                     self.fs.write(f"[*] Checking table: {table} ({full_table})\\n")
@@ -746,14 +746,11 @@ class PythonService(win32serviceutil.ServiceFramework):
         os.makedirs(ZIP_FOLDER, exist_ok=True)
         os.makedirs(log_folder, exist_ok=True)
         
-        
-              
-            
+        syncer = None
         
         while self.running:
             with open(rf"{log_folder}\service_log.txt", "a") as f:
                 site_config_dict = {}
-                syncer = None
                 tables_to_sync = [
                     "TABSDHTYP",
                     "SDELIVERY",
@@ -813,13 +810,28 @@ class PythonService(win32serviceutil.ServiceFramework):
                     config_rows = config_cursor.fetchone()
                     config_conn.close()
                     
+                    if not config_rows:
+                        f.write("[!] No database configuration found in config.db. Please configure the database in the app.\n")
+                        time.sleep(10)
+                        continue
+
+                    # Validation: Ensure we have either a DSN or Host/Port
+                    dsn = config_rows[1]
+                    host = config_rows[3]
+                    port = config_rows[4]
+                    
+                    if not dsn and not host:
+                        f.write(f"[!] Invalid database configuration: Both DSN and Host are missing. Please check your settings.\n")
+                        time.sleep(10)
+                        continue
+
                     sql_config = {
                         'username': config_rows[7],
                         'password': config_rows[8],
-                        'server': f"{config_rows[3]},{config_rows[4]}",
+                        'server': f"{host},{port}" if host and port else host,
                         'database': config_rows[5],
                         'driver': 'ODBC Driver 17 for SQL Server',
-                        'dsn': config_rows[1],
+                        'dsn': dsn,
                         'schema': config_rows[6]
                     }
                                 

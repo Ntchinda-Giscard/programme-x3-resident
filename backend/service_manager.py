@@ -41,6 +41,17 @@ def get_permanent_service_dir():
     os.makedirs(service_dir, exist_ok=True)
     return service_dir
 
+def log_to_service_file(message):
+    """Helper to log messages to the central service log file"""
+    log_dir = r"C:\poswaza\temp\logs"
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, "service_log.txt")
+    with open(log_path, "a") as f:
+        from datetime import datetime
+        f.write(f"[{datetime.now()}] [MANAGER] {message}\n")
+    # Also keep logger for console/standard logging
+    logger.info(message)
+
 def get_service_script_path():
     """Get the absolute path to the service script"""
     
@@ -396,6 +407,42 @@ def get_service_status():
             "error": str(e)
         }
 
+def reset_service():
+    """Stop, uninstall, and delete all service data and app files"""
+    try:
+        log_to_service_file(f"Stopping service {SERVICE_NAME}...")
+        stop_service()
+    except Exception as e:
+        log_to_service_file(f"Warning during stop: {e}")
+    
+    try:
+        log_to_service_file(f"Uninstalling service {SERVICE_NAME}...")
+        uninstall_service()
+    except Exception as e:
+        log_to_service_file(f"Warning during uninstall: {e}")
+        
+    # Delete app code directory
+    try:
+        permanent_dir = get_permanent_service_dir()
+        # Go up one level to delete the whole WAZAPOS folder
+        wazapos_dir = os.path.dirname(permanent_dir)
+        log_to_service_file(f"Deleting app code directory: {wazapos_dir}")
+        if os.path.exists(wazapos_dir):
+            shutil.rmtree(wazapos_dir, ignore_errors=True)
+    except Exception as e:
+        log_to_service_file(f"Error deleting app code: {e}")
+        
+    # Delete data directory
+    data_dir = r"C:\poswaza\temp"
+    try:
+        log_to_service_file(f"Deleting data directory: {data_dir}")
+        if os.path.exists(data_dir):
+            shutil.rmtree(data_dir, ignore_errors=True)
+    except Exception as e:
+        log_to_service_file(f"Error deleting data directory: {e}")
+        
+    return "Reset complete. You can now perform a clean install."
+
 # For testing
 if __name__ == "__main__":
     import sys
@@ -407,6 +454,7 @@ if __name__ == "__main__":
         print("  python service_manager.py start")
         print("  python service_manager.py stop")
         print("  python service_manager.py status")
+        print("  python service_manager.py reset")
         sys.exit(1)
     
     command = sys.argv[1].lower()
@@ -414,22 +462,25 @@ if __name__ == "__main__":
     try:
         if command == "install":
             result = install_service()
-            print(result)
+            log_to_service_file(result)
         elif command == "uninstall":
             result = uninstall_service()
-            print(result)
+            log_to_service_file(result)
         elif command == "start":
             result = start_service()
-            print(result)
+            log_to_service_file(result)
         elif command == "stop":
             result = stop_service()
-            print(result)
+            log_to_service_file(result)
         elif command == "status":
             status = get_service_status()
-            print(f"Service Status: {status}")
+            log_to_service_file(f"Service Status: {status}")
+        elif command == "reset":
+            result = reset_service()
+            log_to_service_file(result)
         else:
             print(f"Unknown command: {command}")
     except Exception as e:
-        print(f"Error: {e}")
+        log_to_service_file(f"Error in command {command}: {e}")
         import traceback
         traceback.print_exc()
