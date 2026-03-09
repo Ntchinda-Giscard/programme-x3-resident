@@ -50,3 +50,20 @@ class SiteConfig(Base):
     id = Column(Integer, primary_key=True, index=True)
     site = Column(String, nullable=True)
     email_address = Column(String, nullable=True)
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+    id = Column(String, primary_key=True, index=True) # UUID string
+    title = Column(String, nullable=True)
+    created_at = Column(String)
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+    id = Column(Integer, primary_key=True, index=True)
+    role = Column(String)  # 'user' or 'assistant'
+    content = Column(String)
+    timestamp = Column(String)  # ISO format string
+    conversation_id = Column(String, ForeignKey("conversations.id"))
+    conversation = relationship("Conversation", back_populates="messages")
+
+Conversation.messages = relationship("ChatMessage", back_populates="conversation")

@@ -1,4 +1,7 @@
 # python-backend/api.py
+import os
+from dotenv import load_dotenv
+load_dotenv()
 import logging
 import sys
 from fastapi import FastAPI, HTTPException
@@ -7,6 +10,7 @@ from src.configs.controller import folder_router
 from src.services.controller import service_router
 from src.odbc.controller import odbc_router
 from src.email_config.controller import email_router
+from src.chat.controller import chat_router
 from src.database.session import engine, Base
 
 
@@ -47,10 +51,17 @@ app.include_router(folder_router)
 app.include_router(service_router)
 app.include_router(odbc_router)
 app.include_router(email_router)
+app.include_router(chat_router)
 
 @app.get("/")
 def read_root():
     return {"API_CHECK": "UP and Running"}
+
+@app.post("/crawl")
+async def crawl_docs():
+    # This would normally call the crawler. 
+    # For now, we'll return a success message or trigger a task.
+    return {"status": "success", "message": "Crawling initiated (Mock)"}
 
 if __name__ == "__main__":
     import uvicorn
