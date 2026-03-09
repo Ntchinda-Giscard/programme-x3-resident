@@ -19,12 +19,18 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Any, Dict, List, Optional, Tuple
 
-# Setup Logging
+# Setup Logging and Folders
 BASE_FOLDER = r"C:\poswaza\temp"
 LOG_FOLDER = os.path.join(BASE_FOLDER, "logs")
-os.makedirs(LOG_FOLDER, exist_ok=True)
+DB_FOLDER = os.path.join(BASE_FOLDER, "db")
+ZIP_FOLDER = os.path.join(BASE_FOLDER, "zip")
+DELTA_FOLDER = os.path.join(BASE_FOLDER, "delta")
 
-log_file_path = os.path.join(LOG_FOLDER, "service.log")
+# Ensure all folders exist at startup
+for folder in [LOG_FOLDER, DB_FOLDER, ZIP_FOLDER, DELTA_FOLDER]:
+    os.makedirs(folder, exist_ok=True)
+
+log_file_path = os.path.join(LOG_FOLDER, "service_log.txt")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,10 +42,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("WazaService")
 
-# Constants
-LOCAL_DB_PATH = os.path.join(BASE_FOLDER, "db")
-ZIP_FOLDER = os.path.join(BASE_FOLDER, "zip")
-DELTA_FOLDER = os.path.join(BASE_FOLDER, "delta")
+# Paths
+LOCAL_DB_PATH = DB_FOLDER
 CONFIG_DB_PATH = os.path.join(LOCAL_DB_PATH, "config.db")
 
 class ConfigLoader:
@@ -469,7 +473,7 @@ class DatabaseSync:
             generic_changes = {}  # {table: (columns, rows)} - for non-site tables
             
             for table in self.tables_to_sync:
-                full_table = f"{self.sql_config['schema']}.{table}"
+                full_table = f"[{self.sql_config['database']}].[{self.sql_config['schema']}].[{table}]"
                 
                 if self.fs:
                     self.fs.write(f"[*] Checking table: {table} ({full_table})\\n")
@@ -737,21 +741,13 @@ class PythonService(win32serviceutil.ServiceFramework):
         """Main service loop."""
         servicemanager.LogInfoMsg("WAZAPOS_TEST - Starting service...")
         
-        BASE_FOLDER = r"C:\poswaza\temp"
-        LOCAL_DB_PATH = rf"{BASE_FOLDER}\db"
-        ZIP_FOLDER = rf"{BASE_FOLDER}\zip"
-        log_folder = rf"{BASE_FOLDER}\logs"
+        # Folders are already ensured at the top of the file
         
-        os.makedirs(LOCAL_DB_PATH, exist_ok=True)
-        os.makedirs(ZIP_FOLDER, exist_ok=True)
-        os.makedirs(log_folder, exist_ok=True)
-        
-        
-              
-            
+        syncer = None
         
         while self.running:
-            with open(rf"{log_folder}\service_log.txt", "a") as f:
+            # Re-open the file handle each loop to stay fresh
+            with open(log_file_path, "a") as f:
                 site_config_dict = {}
                 tables_to_sync = [
                     "TABSDHTYP",
@@ -812,13 +808,28 @@ class PythonService(win32serviceutil.ServiceFramework):
                     config_rows = config_cursor.fetchone()
                     config_conn.close()
                     
+                    if not config_rows:
+                        f.write("[!] No database configuration found in config.db. Please configure the database in the app.\n")
+                        time.sleep(10)
+                        continue
+
+                    # Validation: Ensure we have either a DSN or Host/Port
+                    dsn = config_rows[1]
+                    host = config_rows[3]
+                    port = config_rows[4]
+                    
+                    if not dsn and not host:
+                        f.write(f"[!] Invalid database configuration: Both DSN and Host are missing. Please check your settings.\n")
+                        time.sleep(10)
+                        continue
+
                     sql_config = {
                         'username': config_rows[7],
                         'password': config_rows[8],
-                        'server': f"{config_rows[3]},{config_rows[4]}",
+                        'server': f"{host},{port}" if host and port else host,
                         'database': config_rows[5],
                         'driver': 'ODBC Driver 17 for SQL Server',
-                        'dsn': config_rows[1],
+                        'dsn': dsn,
                         'schema': config_rows[6]
                     }
                                 
@@ -886,12 +897,13 @@ class PythonService(win32serviceutil.ServiceFramework):
                     f.write(f"Error in service execution: {e}\n")
                 try:
                     f.write(f"\n--- Sync run at {datetime.now()} ---\n")
-                                        
                     f.write(f"Next sync in 60 seconds...\n")
-                    syncer.fs = f  # type: ignore # Update file handle
-                    syncer.run_sync() # type: ignore
+                    if syncer is not None:
+                        syncer.fs = f  # type: ignore # Update file handle
+                        syncer.run_sync()  # type: ignore
+                    else:
+                        f.write("[!] Syncer not initialized (likely a connection error above). Skipping sync.\n")
                     time.sleep(60)
-                    
                 except Exception as e:
                     f.write(f"Error in service execution: {e}\n")
             
