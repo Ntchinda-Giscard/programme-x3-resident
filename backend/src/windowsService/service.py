@@ -753,6 +753,7 @@ class PythonService(win32serviceutil.ServiceFramework):
         while self.running:
             with open(rf"{log_folder}\service_log.txt", "a") as f:
                 site_config_dict = {}
+                syncer = None
                 tables_to_sync = [
                     "TABSDHTYP",
                     "SDELIVERY",
@@ -886,12 +887,13 @@ class PythonService(win32serviceutil.ServiceFramework):
                     f.write(f"Error in service execution: {e}\n")
                 try:
                     f.write(f"\n--- Sync run at {datetime.now()} ---\n")
-                                        
                     f.write(f"Next sync in 60 seconds...\n")
-                    syncer.fs = f  # type: ignore # Update file handle
-                    syncer.run_sync() # type: ignore
+                    if syncer is not None:
+                        syncer.fs = f  # type: ignore # Update file handle
+                        syncer.run_sync()  # type: ignore
+                    else:
+                        f.write("[!] Syncer not initialized (likely a connection error above). Skipping sync.\n")
                     time.sleep(60)
-                    
                 except Exception as e:
                     f.write(f"Error in service execution: {e}\n")
             
