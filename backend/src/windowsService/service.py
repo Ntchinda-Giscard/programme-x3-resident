@@ -171,6 +171,8 @@ class DatabaseSync:
             body += f"{table}: {len(rows)} records\n"
             
         self.email_sender.send_email(email, subject, body, csv_path)
+        if self.fs:
+            self.fs.flush()
 
     def __init__(
         self,
@@ -234,7 +236,9 @@ class DatabaseSync:
                 )
         
         if self.fs:
-            self.fs.write(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}\n")
+            masked_conn = conn_str.replace(password, '***') if password else conn_str
+            self.fs.write(f"[*] Connecting with: {masked_conn}\n")
+            self.fs.flush()
         
         conn = pyodbc.connect(conn_str, timeout=30)
         
@@ -244,6 +248,51 @@ class DatabaseSync:
         conn.setencoding('latin-1')
         
         return conn
+
+    def _resolve_table_name(self, cursor, table_name: str) -> str:
+        """
+        Attempts to find the correct schema for a table if the configured one fails.
+        """
+        db = self.sql_config.get('database', '')
+        default_schema = self.sql_config.get('schema', 'dbo')
+        
+        # Try default first
+        full_name = f"[{db}].[{default_schema}].[{table_name}]"
+        
+        try:
+            cursor.execute(f"SELECT TOP 0 * FROM {full_name}")
+            return full_name
+        except pyodbc.ProgrammingError as e:
+            if '42S02' in str(e): # Object Not Found
+                if self.fs:
+                    self.fs.write(f"    [!] Table {full_name} not found. Searching other schemas...\n")
+                    self.fs.flush()
+                
+                # Search for the table in other schemas
+                cursor.execute(
+                    "SELECT TABLE_SCHEMA FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
+                    (table_name,)
+                )
+                row = cursor.fetchone()
+                if row:
+                    found_schema = row[0]
+                    resolved_name = f"[{db}].[{found_schema}].[{table_name}]"
+                    if self.fs:
+                        self.fs.write(f"    [+] Found table in schema: {found_schema}. Using {resolved_name}\n")
+                        self.fs.flush()
+                    return resolved_name
+                
+                # Try common ones as last resort
+                for alt in ['dbo', 'SEED', 'seed']:
+                    if alt.lower() == default_schema.lower(): continue
+                    alt_name = f"[{db}].[{alt}].[{table_name}]"
+                    try:
+                        cursor.execute(f"SELECT TOP 0 * FROM {alt_name}")
+                        return alt_name
+                    except:
+                        continue
+            
+            raise e
 
 
     def _init_first_launch(self, tables: List[str]):
@@ -261,21 +310,23 @@ class DatabaseSync:
                 
                 for table in tables:
                     try:
-                        # Determine full table name based on site dependency
-                        full_table = f"[{self.sql_config['database']}].[{self.sql_config['schema']}].[{table}]" # type: ignore
+                        # Determine full table name dynamically
+                        full_table = self._resolve_table_name(sql_cursor, table)
 
                         if self.fs:
                             self.fs.write(f"[*] Processing table: {table} ({full_table})\n")
+                            self.fs.flush()
 
-                        # First, check if table has tracking columns
+                        # First, check column structure
                         try:
                             check_columns_query = f"SELECT TOP 1 * FROM {full_table}"
                             sql_cursor.execute(check_columns_query)
                         except Exception as e:
                             if self.fs:
-                                self.fs.write(f"    [!] ERROR: TABLE '{table}' NOT FOUND or error accessing {full_table}\n")
+                                self.fs.write(f"    [!] FATAL ERROR: Unable to access {full_table}\n")
                                 self.fs.write(f"    [!] Exception details: {type(e).__name__}: {str(e)}\n")
                                 self.fs.write(f"    [!] SKIPPING table '{table}'\n\n")
+                                self.fs.flush()
                             continue
 
                         columns = [column[0] for column in sql_cursor.description]
@@ -474,10 +525,19 @@ class DatabaseSync:
             generic_changes = {}  # {table: (columns, rows)} - for non-site tables
             
             for table in self.tables_to_sync:
-                full_table = f"[{self.sql_config['database']}].[{self.sql_config['schema']}].[{table}]"
-                
-                if self.fs:
-                    self.fs.write(f"[*] Checking table: {table} ({full_table})\\n")
+                try:
+                    # Determine full table name dynamically
+                    full_table = self._resolve_table_name(sql_cursor, table)
+                    
+                    if self.fs:
+                        self.fs.write(f"[*] Checking table: {table} ({full_table})\n")
+                        self.fs.flush()
+                except Exception as e:
+                    if self.fs:
+                        self.fs.write(f"    [!] ERROR: Cannot resolve table '{table}': {type(e).__name__}: {str(e)}\n")
+                        self.fs.write(f"    [!] SKIPPING table '{table}'\n\n")
+                        self.fs.flush()
+                    continue
                 
                 # Check if table has tracking columns
                 try:
@@ -486,8 +546,9 @@ class DatabaseSync:
                     columns = [column[0] for column in sql_cursor.description]
                 except Exception as e:
                     if self.fs:
-                        self.fs.write(f"    [!] ERROR: Cannot access table '{table}': {type(e).__name__}: {str(e)}\\n")
-                        self.fs.write(f"    [!] SKIPPING table '{table}'\\n\\n")
+                        self.fs.write(f"    [!] ERROR: Cannot access resolved table '{full_table}': {type(e).__name__}: {str(e)}\n")
+                        self.fs.write(f"    [!] SKIPPING table '{table}'\n\n")
+                        self.fs.flush()
                     continue
                 
                 has_tracking = (
@@ -502,7 +563,8 @@ class DatabaseSync:
                         if 'ZTRANSFERT_0' not in columns: missing.append('ZTRANSFERT_0')
                         if 'ZTRANSDATE_0' not in columns: missing.append('ZTRANSDATE_0')
                         if 'UPDDATTIM_0' not in columns: missing.append('UPDDATTIM_0')
-                        self.fs.write(f"    [!] Table {table} is missing columns for incremental sync: {', '.join(missing)}. Skipping delta sync.\\n\\n")
+                        self.fs.write(f"    [!] Table {table} is missing columns for incremental sync: {', '.join(missing)}. Skipping delta sync.\n\n")
+                        self.fs.flush()
                     continue
                 
                 # Determine if site-dependent
@@ -532,6 +594,7 @@ class DatabaseSync:
                         if len(rows) > 0:
                             if self.fs:
                                 self.fs.write(f"[*] Found {len(rows)} changed records in {table} for site {site}\n")
+                                self.fs.flush()
                             
                             if site not in site_changes:
                                 site_changes[site] = {}
@@ -555,6 +618,7 @@ class DatabaseSync:
                     if len(rows) > 0:
                         if self.fs:
                             self.fs.write(f"[*] Found {len(rows)} changed records in {table} (generic table)\n")
+                            self.fs.flush()
                         
                         generic_changes[table] = (columns, rows)
                         
@@ -581,16 +645,17 @@ class DatabaseSync:
                     for table, (columns, rows) in site_changes[site].items():
                         all_changes_for_site[table] = (columns, rows)
                 
-                # Only send email if there are changes
                 if len(all_changes_for_site) > 0:
                     csv_path = self._export_consolidated_csv(all_changes_for_site, site)
                     self._send_consolidated_email(csv_path, site, email, all_changes_for_site)
                 else:
                     if self.fs:
                         self.fs.write(f"[*] No changes for site {site}\n")
+                        self.fs.flush()
         
         if self.fs:
             self.fs.write(f"[*] Sync monitoring completed at {datetime.now()}\n")
+            self.fs.flush()
 
     def _export_consolidated_csv(self, changes_dict, site):
         """
@@ -622,6 +687,7 @@ class DatabaseSync:
         
         if self.fs:
             self.fs.write(f"    Exported consolidated CSV: {csv_path}\n")
+            self.fs.flush()
         
         return csv_path
 
@@ -871,15 +937,11 @@ class PythonService(win32serviceutil.ServiceFramework):
                     f.write(f"[*] ====> Email sender {email_rows[2]} password {email_rows[3]} \n")
                     
                     parameters = {
-                        "sites": ["AE011", "AE012"],
+                        "sites": list(site_config_dict.keys()),
                         "site_dependent_tables": ["ITMFACILIT", "FACILITY"],
                         "site_keys_column": {"ITMFACILIT": "STOFCY_0", "FACILITY": "FCY_0"},
                         "primary_key_column": "AUUID_0", 
                         "all_tables": [t for t in tables_to_sync if t not in ["ITMFACILIT", "FACILITY"]],  # Exclude site-dependent
-                        # "site_emails": {
-                        #     "AE011": "angeldobaron@gmail.com",
-                        #     "AE012": "chrisdobaron@gmail.com"
-                        # }  
                         'site_emails' : site_config_dict
                     }
 
@@ -899,14 +961,17 @@ class PythonService(win32serviceutil.ServiceFramework):
                 try:
                     f.write(f"\n--- Sync run at {datetime.now()} ---\n")
                     f.write(f"Next sync in 60 seconds...\n")
+                    f.flush()
                     if syncer is not None:
                         syncer.fs = f  # type: ignore # Update file handle
                         syncer.run_sync()  # type: ignore
                     else:
                         f.write("[!] Syncer not initialized (likely a connection error above). Skipping sync.\n")
+                        f.flush()
                     time.sleep(60)
                 except Exception as e:
                     f.write(f"Error in service execution: {e}\n")
+                    f.flush()
             
             time.sleep(60)
 
