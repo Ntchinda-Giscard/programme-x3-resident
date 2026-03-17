@@ -86,7 +86,7 @@ class DatabaseSync:
                     f"Trusted_Connection=yes"
                 )
         
-        logger.info(f"[*] Connecting with: {conn_str.replace(password or '', '***') if password else conn_str}")
+        logger.info(f"[*] Connecting with: {conn_str}")
         return pyodbc.connect(conn_str)
 
     def _get_local_connection(self):
