@@ -254,7 +254,7 @@ class DatabaseSync:
         Attempts to find the correct schema for a table if the configured one fails.
         """
         db = self.sql_config.get('database', '')
-        default_schema = self.sql_config.get('schema', 'dbo')
+        default_schema = self.sql_config.get('schema', 'seed')
         
         # Try default first
         full_name = f"[{db}].[{default_schema}].[{table_name}]"
