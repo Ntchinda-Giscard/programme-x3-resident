@@ -29,14 +29,14 @@ def ensure_essential_folders():
 
 # Initialize folders first
 BASE_DIR = ensure_essential_folders()
-LOG_PATH = os.path.join(BASE_DIR, "logs", "service_log.txt")
+API_LOG_PATH = os.path.join(BASE_DIR, "logs", "fastapi.log")
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler(LOG_PATH)
+        logging.FileHandler(API_LOG_PATH)
     ]
 )
 
@@ -59,9 +59,9 @@ def get_permanent_service_dir():
     return service_dir
 
 def log_to_service_file(message):
-    """Helper to log messages to the central service log file"""
+    """Helper to log messages to the API log file (kept for convenience)"""
     ensure_essential_folders()
-    with open(LOG_PATH, "a") as f:
+    with open(API_LOG_PATH, "a") as f:
         from datetime import datetime
         f.write(f"[{datetime.now()}] [MANAGER] {message}\n")
     # Also keep logger for console/standard logging

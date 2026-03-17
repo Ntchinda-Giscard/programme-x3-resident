@@ -30,7 +30,8 @@ DELTA_FOLDER = os.path.join(BASE_FOLDER, "delta")
 for folder in [LOG_FOLDER, DB_FOLDER, ZIP_FOLDER, DELTA_FOLDER]:
     os.makedirs(folder, exist_ok=True)
 
-log_file_path = os.path.join(LOG_FOLDER, "service_log.txt")
+log_file_path = os.path.join(LOG_FOLDER, "service.log")
+sync_log_path = os.path.join(LOG_FOLDER, "service_log.txt")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -747,7 +748,7 @@ class PythonService(win32serviceutil.ServiceFramework):
         
         while self.running:
             # Re-open the file handle each loop to stay fresh
-            with open(log_file_path, "a") as f:
+            with open(sync_log_path, "a") as f:
                 site_config_dict = {}
                 tables_to_sync = [
                     "TABSDHTYP",
