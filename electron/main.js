@@ -15,7 +15,7 @@ let isShuttingDown = false;
 let cleanupInProgress = false;
 const trackedProcesses = new Map();
 
-const BACKEND_PORT = isDev ? 5000 : 5000;
+const BACKEND_PORT = isDev ? 8005 : 8005;
 
 // Check if running as administrator (Windows)
 function isRunningAsAdmin() {
@@ -516,6 +516,15 @@ ipcMain.handle("select-folder", async () => {
     return result.filePaths[0];
   }
   return null;
+});
+
+ipcMain.handle("get-app-status", async () => {
+  return {
+    isAdmin: isRunningAsAdmin(),
+    isDev: isDev,
+    version: app.getVersion(),
+    platform: process.platform
+  };
 });
 
 process.on("SIGINT", async () => {

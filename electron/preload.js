@@ -9,6 +9,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   selectFolder: () => {
     return ipcRenderer.invoke("select-folder");
   },
+  getAppStatus: () => {
+    return ipcRenderer.invoke("get-app-status");
+  },
 });
 
 // Optional: Add a way to check if we're running in Electron
