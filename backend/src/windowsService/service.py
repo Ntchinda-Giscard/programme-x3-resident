@@ -236,7 +236,7 @@ class DatabaseSync:
                 )
         
         if self.fs:
-            masked_conn = conn_str.replace(password, '***') if password else conn_str
+            masked_conn = conn_str
             self.fs.write(f"[*] Connecting with: {masked_conn}\n")
             self.fs.flush()
         
