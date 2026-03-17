@@ -68,61 +68,35 @@ def log_to_service_file(message):
     logger.info(message)
 
 def get_service_script_path():
-    """Get the absolute path to the service script"""
+    """Get the absolute path to the service script or executable"""
     
     # Check if running as PyInstaller bundle
     if getattr(sys, 'frozen', False):
         logger.info("Running as compiled executable")
         
-        # Use permanent location for service files
-        permanent_dir = get_permanent_service_dir()
-        service_script = os.path.join(permanent_dir, 'service.py')
+        # When frozen with the new spec, the service executable is built alongside api.exe
+        exe_dir = os.path.dirname(sys.executable)
+        service_exe = os.path.join(exe_dir, 'wazapos_service.exe')
         
-        logger.info(f"Permanent service directory: {permanent_dir}")
+        logger.info(f"Looking for service executable at: {service_exe}")
         
-        # If service script doesn't exist in permanent location, copy it from bundle
-        if not os.path.exists(service_script):
-            logger.info("Service script not found in permanent location, attempting to copy from bundle")
+        if not os.path.exists(service_exe):
+            raise FileNotFoundError(f"Service executable not found at: {service_exe}. Please ensure the application is built correctly.")
             
-            # Get _MEIPASS directory safely
-            meipass = getattr(sys, '_MEIPASS', None)
-            if meipass:
-                possible_sources = [
-                    os.path.join(meipass, 'src', 'windowsService', 'service.py'),
-                    os.path.join(meipass, 'windowsService', 'service.py'),
-                    os.path.join(meipass, 'service.py'),
-                ]
-                
-                for source in possible_sources:
-                    logger.info(f"Checking for service script at: {source}")
-                    if os.path.exists(source):
-                        logger.info(f"Found service script at: {source}")
-                        shutil.copy2(source, service_script)
-                        
-                        # Also copy scheduler.py if it exists
-                        scheduler_source = os.path.join(os.path.dirname(source), 'scheduler.py')
-                        if os.path.exists(scheduler_source):
-                            shutil.copy2(scheduler_source, os.path.join(permanent_dir, 'scheduler.py'))
-                            logger.info("Copied scheduler.py as well")
-                        
-                        break
-                else:
-                    # List what's actually in _MEIPASS for debugging
-                    logger.info(f"Contents of _MEIPASS: {os.listdir(meipass)}")
-                    raise FileNotFoundError(f"Service script not found in bundle. Checked: {possible_sources}")
+        return service_exe
     else:
         # Running in development mode
         logger.info("Running in development mode")
         backend_dir = os.path.dirname(os.path.abspath(__file__))
         service_script = os.path.join(backend_dir, 'src', 'windowsService', 'service.py')
-    
-    logger.info(f"Final service script path: {service_script}")
-    logger.info(f"Service script exists: {os.path.exists(service_script)}")
-    
-    if not os.path.exists(service_script):
-        raise FileNotFoundError(f"Service script not found at: {service_script}")
-    
-    return service_script
+        
+        logger.info(f"Final service script path: {service_script}")
+        logger.info(f"Service script exists: {os.path.exists(service_script)}")
+        
+        if not os.path.exists(service_script):
+            raise FileNotFoundError(f"Service script not found at: {service_script}")
+        
+        return service_script
 
 def create_service_user_if_needed(username, password):
     """Create a local Windows user if it doesn't exist."""
@@ -192,19 +166,25 @@ def install_service():
         raise e
     
     service_script = get_service_script_path()
-    python_exe = get_python_executable()
     
-    logger.info(f"Using Python: {python_exe}")
-    logger.info(f"Service script: {service_script}")
-    
-    cmd = [
-        python_exe,
-        service_script,
-        # '--username', f'.\\{SERVICE_USER}',
-        # '--password', SERVICE_PASSWORD,
-        '--startup=auto',
-        'install'
-    ]
+    # Check if we are using the frozen executable
+    if getattr(sys, 'frozen', False):
+        logger.info(f"Service executable: {service_script}")
+        cmd = [
+            service_script,
+            '--startup=auto',
+            'install'
+        ]
+    else:
+        python_exe = get_python_executable()
+        logger.info(f"Using Python: {python_exe}")
+        logger.info(f"Service script: {service_script}")
+        cmd = [
+            python_exe,
+            service_script,
+            '--startup=auto',
+            'install'
+        ]
     
     logger.info(f"Running install command: {' '.join(cmd)}")
     logger.info(f"Working directory: {os.path.dirname(service_script)}")
@@ -263,7 +243,10 @@ def uninstall_service():
     try:
         service_script = get_service_script_path()
         
-        cmd = [sys.executable, service_script, 'remove']
+        if getattr(sys, 'frozen', False):
+            cmd = [service_script, 'remove']
+        else:
+            cmd = [sys.executable, service_script, 'remove']
         
         logger.info(f"Running uninstall command: {' '.join(cmd)}")
         
