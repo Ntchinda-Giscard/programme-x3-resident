@@ -250,6 +250,8 @@ class DatabaseSync:
         if self.fs:
             masked_conn = conn_str
             self.fs.write(f"[*] Connecting with: {masked_conn}\n")
+            self.fs.write(f"DEBUG PASSWORD RAW: [{repr(self.sql_config.get('password'))}]")
+            self.fs.write(f"DEBUG PASSWORD CLEAN: [{repr(password)}]")
             self.fs.flush()
         
         conn = pyodbc.connect(conn_str, timeout=30)
