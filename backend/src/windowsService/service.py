@@ -208,6 +208,7 @@ class DatabaseSync:
         dsn = self.sql_config.get('dsn')
         username = self.sql_config.get('username')
         password = self.sql_config.get('password')
+        password = password.strip().strip("'").strip('"')
         
         if dsn:
             if username and password:
