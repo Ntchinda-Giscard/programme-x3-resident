@@ -17,7 +17,7 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, TextIOWrapper
 
 # Setup Logging and Folders
 BASE_FOLDER = r"C:\poswaza\temp"
@@ -191,7 +191,7 @@ class DatabaseSync:
         self.parameters = parameters
         self.zip_folder = zip_folder
         self.email_config = email_config
-        self.fs = fs
+        self.fs : Optional[TextIOWrapper] = fs
         self.tables_to_sync = tables_to_sync
         self.local_db_path = local_db_path
         
@@ -208,7 +208,18 @@ class DatabaseSync:
         dsn = self.sql_config.get('dsn')
         username = self.sql_config.get('username')
         password = self.sql_config.get('password')
-        password = password.strip().strip("'").strip('"')
+        password = password.strip()
+
+        # Remove ALL surrounding quotes repeatedly
+        while password.startswith(("'", '"')) and password.endswith(("'", '"')):
+            password = password[1:-1]
+
+        # Final safety
+        password = password.strip()
+
+        if self.fs:
+            self.fs.write(f"DEBUG PASSWORD RAW: [{repr(self.sql_config.get('password'))}]")
+            self.fs.write(f"DEBUG PASSWORD CLEAN: [{repr(password)}]")
         
         if dsn:
             if username and password:
