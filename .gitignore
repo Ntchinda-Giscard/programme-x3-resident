@@ -3,10 +3,22 @@
 # dependencies
 /node_modules
 
+<<<<<<< HEAD
+=======
+/release
+/releases
+
+>>>>>>> 35e5f1996b273f7a52fffd6f57d18cf74529d6cd
 # next.js
 /.next/
 /out/
 
+<<<<<<< HEAD
+=======
+/__pycache__
+__pycache__
+
+>>>>>>> 35e5f1996b273f7a52fffd6f57d18cf74529d6cd
 # production
 /build
 
