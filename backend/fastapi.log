@@ -1,0 +1,370 @@
+2025-10-24 16:49:57,086 - INFO - Current service status: {'installed': False, 'status': 'not_installed', 'status_code': None} - service_manager - install_service - 162 - MainThread
+2025-10-24 16:49:57,086 - INFO - Running in development mode - service_manager - get_service_script_path - 92 - MainThread
+2025-10-24 16:49:57,087 - INFO - Final service script path: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - get_service_script_path - 96 - MainThread
+2025-10-24 16:49:57,087 - INFO - Service script exists: True - service_manager - get_service_script_path - 97 - MainThread
+2025-10-24 16:49:57,088 - INFO - Using Python: C:\Python313\python.exe - service_manager - install_service - 172 - MainThread
+2025-10-24 16:49:57,088 - INFO - Service result: None - src.services.controller - install_service - 32 - MainThread
+2025-10-29 10:13:01,168 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-29 10:13:01,229 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-29 10:13:43,712 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-29 10:13:43,717 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-29 10:15:21,377 - INFO - Current service status: {'installed': False, 'status': 'not_installed', 'status_code': None} - service_manager - install_service - 163 - MainThread
+2025-10-29 10:15:21,378 - INFO - Running in development mode - service_manager - get_service_script_path - 92 - MainThread
+2025-10-29 10:15:21,379 - INFO - Final service script path: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - get_service_script_path - 96 - MainThread
+2025-10-29 10:15:21,379 - INFO - Service script exists: True - service_manager - get_service_script_path - 97 - MainThread
+2025-10-29 10:15:21,382 - INFO - Using Python: C:\Python313\python.exe - service_manager - install_service - 174 - MainThread
+2025-10-29 10:15:21,383 - INFO - Service script: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - install_service - 175 - MainThread
+2025-10-29 10:15:21,384 - INFO - Running install command: C:\Python313\python.exe c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py --startup=auto install - service_manager - install_service - 186 - MainThread
+2025-10-29 10:15:21,385 - INFO - Working directory: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service - service_manager - install_service - 187 - MainThread
+2025-10-29 10:15:21,386 - INFO - About to execute subprocess.run... - service_manager - install_service - 191 - MainThread
+2025-10-29 10:15:21,841 - INFO - Subprocess completed - service_manager - install_service - 200 - MainThread
+2025-10-29 10:15:21,841 - INFO - Return code: 1 - service_manager - install_service - 201 - MainThread
+2025-10-29 10:15:21,848 - INFO - STDOUT:  - service_manager - install_service - 202 - MainThread
+2025-10-29 10:15:21,849 - INFO - STDERR: Traceback (most recent call last):
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py", line 9, in <module>
+    from scheduler import TaskScheduler
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\scheduler.py", line 2, in <module>
+    import schedule
+ModuleNotFoundError: No module named 'schedule'
+ - service_manager - install_service - 203 - MainThread
+2025-10-29 10:15:21,850 - ERROR - Installation failed with error: Traceback (most recent call last):
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py", line 9, in <module>
+    from scheduler import TaskScheduler
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\scheduler.py", line 2, in <module>
+    import schedule
+ModuleNotFoundError: No module named 'schedule'
+ - service_manager - install_service - 211 - MainThread
+2025-10-29 10:15:21,851 - ERROR - Unexpected error during installation: Installation failed: Traceback (most recent call last):
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py", line 9, in <module>
+    from scheduler import TaskScheduler
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\scheduler.py", line 2, in <module>
+    import schedule
+ModuleNotFoundError: No module named 'schedule'
+ - service_manager - install_service - 221 - MainThread
+2025-10-29 10:15:21,851 - ERROR - Exception type: Exception - service_manager - install_service - 222 - MainThread
+2025-10-29 10:15:21,855 - ERROR - Traceback: Traceback (most recent call last):
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\service_manager.py", line 212, in install_service
+    raise Exception(f"Installation failed: {error_msg}")
+Exception: Installation failed: Traceback (most recent call last):
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py", line 9, in <module>
+    from scheduler import TaskScheduler
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\scheduler.py", line 2, in <module>
+    import schedule
+ModuleNotFoundError: No module named 'schedule'
+
+ - service_manager - install_service - 224 - MainThread
+2025-10-29 10:15:21,862 - ERROR - Error installing service: Failed to install service: Installation failed: Traceback (most recent call last):
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py", line 9, in <module>
+    from scheduler import TaskScheduler
+  File "c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\scheduler.py", line 2, in <module>
+    import schedule
+ModuleNotFoundError: No module named 'schedule'
+ - src.services.controller - install_service - 35 - MainThread
+2025-10-29 10:20:49,968 - INFO - Creating app.db... - __main__ - <module> - 24 - MainThread
+2025-10-29 10:20:49,971 - INFO - Created app.db - __main__ - <module> - 26 - MainThread
+2025-10-29 10:20:54,539 - INFO - Current service status: {'installed': False, 'status': 'not_installed', 'status_code': None} - service_manager - install_service - 163 - MainThread
+2025-10-29 10:20:54,540 - INFO - Running in development mode - service_manager - get_service_script_path - 92 - MainThread
+2025-10-29 10:20:54,541 - INFO - Final service script path: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - get_service_script_path - 96 - MainThread
+2025-10-29 10:20:54,573 - INFO - Service script exists: True - service_manager - get_service_script_path - 97 - MainThread
+2025-10-29 10:20:54,575 - INFO - Using Python: C:\Python313\python.exe - service_manager - install_service - 174 - MainThread
+2025-10-29 10:20:54,575 - INFO - Service script: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py - service_manager - install_service - 175 - MainThread
+2025-10-29 10:20:54,575 - INFO - Running install command: C:\Python313\python.exe c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service\service.py --startup=auto install - service_manager - install_service - 186 - MainThread
+2025-10-29 10:20:54,576 - INFO - Working directory: c:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windows-service - service_manager - install_service - 187 - MainThread
+2025-10-29 10:20:54,576 - INFO - About to execute subprocess.run... - service_manager - install_service - 191 - MainThread
+2025-10-29 10:20:55,007 - INFO - Subprocess completed - service_manager - install_service - 200 - MainThread
+2025-10-29 10:20:55,007 - INFO - Return code: 0 - service_manager - install_service - 201 - MainThread
+2025-10-29 10:20:55,009 - INFO - STDOUT: Installing service WAZAPOS
+moving host exe 'C:\Users\DIGITAL MARKET\AppData\Roaming\Python\Python313\site-packages\win32\pythonservice.exe' -> 'C:\Python313\pythonservice.exe'
+Service installed
+ - service_manager - install_service - 202 - MainThread
+2025-10-29 10:20:55,014 - INFO - STDERR:  - service_manager - install_service - 203 - MainThread
+2025-10-29 10:20:55,016 - INFO - Returning success: Service installed successfully - service_manager - install_service - 207 - MainThread
+2025-10-29 10:20:55,017 - INFO - Service result: Service installed successfully - src.services.controller - install_service - 32 - MainThread
+2025-11-10 11:42:42,905 - INFO - TaskScheduler initialized - scheduler - __init__ - 37 - MainThread
+2025-11-10 11:47:47,296 - INFO - TaskScheduler initialized - scheduler - __init__ - 37 - MainThread
+2025-11-10 11:51:45,829 - INFO - TaskScheduler initialized - scheduler - __init__ - 37 - MainThread
+2025-11-10 11:51:46,474 - INFO - Test log entry 1 - test - <module> - 162 - MainThread
+2025-11-10 11:51:46,475 - INFO - Test log entry 2 - test - <module> - 163 - MainThread
+2025-11-10 11:51:46,475 - INFO - Test log entry 3 - test - <module> - 164 - MainThread
+2025-11-11 10:33:32,895 - INFO - Stopping service: WAZAPOS - __main__ - stop_service - 314 - MainThread
+2025-11-11 10:33:41,867 - INFO - Starting service: WAZAPOS - __main__ - start_service - 277 - MainThread
+2025-11-11 10:46:15,085 - INFO - TaskScheduler initialized - scheduler - __init__ - 37 - MainThread
+2025-11-11 10:46:15,085 - INFO - Starting scheduler thread... - scheduler - start - 70 - MainThread
+2025-11-11 10:46:15,086 - INFO - Scheduler loop starting... - scheduler - run - 59 - Thread-1 (run)
+2025-11-11 10:46:15,087 - INFO - Scheduler thread started - scheduler - start - 74 - MainThread
+2025-11-11 10:46:15,087 - INFO - Setting up scheduled tasks... - scheduler - setup_schedules - 41 - Thread-1 (run)
+2025-11-11 10:46:15,098 - INFO - Scheduled: Daily task at 10:30 AM - scheduler - setup_schedules - 45 - Thread-1 (run)
+2025-11-11 10:46:15,099 - INFO - Scheduled: Hourly task - scheduler - setup_schedules - 49 - Thread-1 (run)
+2025-11-11 10:46:15,101 - INFO - Scheduled: Task every 5 minutes - scheduler - setup_schedules - 53 - Thread-1 (run)
+2025-11-11 10:46:15,102 - INFO - All schedules configured - scheduler - setup_schedules - 55 - Thread-1 (run)
+2025-11-11 10:46:25,295 - INFO - Stopping scheduler... - scheduler - stop - 78 - MainThread
+2025-11-11 10:46:26,121 - INFO - Scheduler loop ended - scheduler - run - 66 - Thread-1 (run)
+2025-11-11 10:46:26,125 - INFO - Scheduler stopped - scheduler - stop - 82 - MainThread
+2025-11-11 11:45:58,981 - INFO - TaskScheduler initialized - scheduler - __init__ - 37 - MainThread
+2025-11-13 10:47:39,719 - INFO - Creating app.db... - __main__ - <module> - 25 - MainThread
+2025-11-13 10:47:40,786 - INFO - Created app.db - __main__ - <module> - 27 - MainThread
+2025-11-13 11:36:00,818 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-11-13 11:36:00,925 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-11-13 11:36:58,790 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-13 11:36:58,838 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-13 11:37:02,206 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-13 11:37:02,208 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 11:46:21,522 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-11-19 11:46:21,636 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-11-19 12:22:59,099 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:22:59,152 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:28:43,964 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:28:43,968 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:28:46,122 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 12:28:46,128 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 12:39:42,691 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:39:42,693 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:44:07,555 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:44:07,558 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:44:11,737 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 12:44:11,738 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 12:51:04,521 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:51:04,550 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:51:22,734 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:51:22,737 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:59:07,263 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:59:07,267 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:59:30,232 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 12:59:30,255 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 12:59:30,928 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 12:59:30,932 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 13:05:54,772 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:05:54,774 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 13:11:00,497 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-11-19 13:11:00,503 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-11-19 13:13:08,316 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:13:08,319 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 13:13:10,332 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 13:13:10,333 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 13:14:40,467 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:14:40,472 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 13:14:42,878 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 13:14:42,880 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 13:17:46,699 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:17:46,719 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 13:17:49,422 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 13:17:49,425 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 13:19:56,891 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:19:56,894 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 13:21:51,787 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:21:51,789 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 13:58:22,324 - INFO - === CONTROLLER: Starting install request === - src.services.controller - install_service - 29 - MainThread
+2025-11-19 13:58:22,332 - INFO - Current service status: {'installed': False, 'status': 'not_installed', 'status_code': None} - service_manager - install_service - 160 - MainThread
+2025-11-19 13:58:22,335 - INFO - Running in development mode - service_manager - get_service_script_path - 89 - MainThread
+2025-11-19 13:58:22,336 - INFO - Final service script path: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windowsService\service.py - service_manager - get_service_script_path - 93 - MainThread
+2025-11-19 13:58:22,338 - INFO - Service script exists: True - service_manager - get_service_script_path - 94 - MainThread
+2025-11-19 13:58:22,340 - INFO - Using Python: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\.venv\Scripts\python.exe - service_manager - install_service - 171 - MainThread
+2025-11-19 13:58:22,341 - INFO - Service script: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windowsService\service.py - service_manager - install_service - 172 - MainThread
+2025-11-19 13:58:22,342 - INFO - Running install command: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\.venv\Scripts\python.exe C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windowsService\service.py --startup=auto install - service_manager - install_service - 183 - MainThread
+2025-11-19 13:58:22,348 - INFO - Working directory: C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\src\windowsService - service_manager - install_service - 184 - MainThread
+2025-11-19 13:58:22,350 - INFO - About to execute subprocess.run... - service_manager - install_service - 188 - MainThread
+2025-11-19 13:58:24,216 - INFO - Subprocess completed - service_manager - install_service - 197 - MainThread
+2025-11-19 13:58:24,217 - INFO - Return code: 0 - service_manager - install_service - 198 - MainThread
+2025-11-19 13:58:24,218 - INFO - STDOUT: Installing service WAZAPOS_TEST
+moving host exe 'C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\.venv\Lib\site-packages\win32\pythonservice.exe' -> 'C:\Users\DIGITAL MARKET\Documents\programme-x3-resident\backend\.venv\pythonservice.exe'
+Error installing service: Accès refusé. (5)
+ - service_manager - install_service - 199 - MainThread
+2025-11-19 13:58:24,220 - INFO - STDERR:  - service_manager - install_service - 200 - MainThread
+2025-11-19 13:58:24,221 - INFO - Returning success: Service installed successfully - service_manager - install_service - 204 - MainThread
+2025-11-19 13:58:24,222 - INFO - === CONTROLLER: Service manager returned: Service installed successfully === - src.services.controller - install_service - 31 - MainThread
+2025-11-19 13:58:24,224 - INFO - === CONTROLLER: Returning success response === - src.services.controller - install_service - 41 - MainThread
+2025-11-19 13:58:46,687 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 13:58:46,700 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 14:00:10,886 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 14:00:10,893 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 14:04:38,311 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 14:04:38,324 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 14:04:45,220 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 14:04:45,223 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 14:04:48,981 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 14:04:48,982 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 14:23:21,910 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-11-19 14:23:21,914 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-11-19 14:24:48,636 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 14:24:48,639 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 14:27:24,539 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 14:27:24,541 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 15:01:52,879 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 15:01:52,882 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 15:02:26,009 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 15:02:26,011 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 15:03:05,552 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 15:03:05,553 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 15:03:15,920 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 15:03:15,956 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 15:03:17,922 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 15:03:17,923 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-11-19 15:07:13,148 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-11-19 15:07:13,151 - INFO - === CONTROLLER: Service status: {'installed': False, 'status': 'not_installed', 'status_code': None} === - src.services.controller - get_status - 82 - MainThread
+2025-11-19 15:25:17,031 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-11-19 15:25:17,033 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: Service is not installed === - src.services.controller - stop_service - 139 - MainThread
+2025-12-10 13:23:44,400 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 13:23:44,767 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 13:26:29,531 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 13:26:29,568 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 13:43:23,422 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 13:43:23,426 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 13:58:09,560 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 13:58:09,563 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 14:08:48,193 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 14:08:48,198 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 15:25:20,626 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 15:25:20,628 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 15:25:23,412 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 15:25:23,414 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 15:42:36,435 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 15:42:36,461 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 15:48:42,846 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 15:48:42,849 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 15:55:32,338 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 15:55:32,340 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 16:52:28,444 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 16:52:28,449 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 16:53:01,537 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 16:53:01,539 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 16:53:57,114 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 16:53:57,115 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 17:10:57,981 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 17:10:57,989 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 17:17:33,431 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 17:17:33,436 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 17:19:41,319 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 17:19:47,241 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 17:20:33,042 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 17:20:33,044 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 17:20:38,283 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 17:20:38,287 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 17:22:17,383 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 17:22:17,395 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 17:26:02,254 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 17:26:02,257 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 17:26:09,156 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 17:26:09,158 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-10 17:37:21,691 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 17:37:21,701 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 17:38:54,733 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-10 17:38:54,749 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-10 17:39:35,093 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-10 17:39:35,096 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-10 17:43:28,994 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-10 17:43:28,995 - INFO - === CONTROLLER: Service manager returned: Service is already stopped === - src.services.controller - stop_service - 126 - MainThread
+2025-12-11 09:44:00,292 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-11 09:44:00,484 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-11 09:47:45,567 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-11 09:47:45,851 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-11 09:49:47,632 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-11 09:49:47,639 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-11 09:49:47,649 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-11 10:01:36,450 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-11 10:01:36,457 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-11 10:41:55,871 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-11 10:41:55,880 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-11 10:50:00,742 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-11 10:50:00,745 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-11 11:01:12,465 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-11 11:01:12,467 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-11 11:01:12,477 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-11 14:25:54,054 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-11 14:25:54,104 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-11 14:34:02,467 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-11 14:34:02,581 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-11 14:34:09,997 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-11 14:34:09,999 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-11 14:34:10,013 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-11 14:35:43,275 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-11 14:35:43,286 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-11 15:43:07,013 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-11 15:43:07,021 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-11 15:48:42,917 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-11 15:48:42,922 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-12 10:40:12,960 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-12 10:40:13,019 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-12 10:42:55,967 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 10:42:55,985 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 10:43:08,663 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-12 10:43:08,666 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-12 10:43:08,669 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-12 10:47:54,805 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 10:47:54,812 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 10:48:18,571 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-12 10:48:18,575 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-12 10:48:18,576 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-12 11:52:10,084 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-12 11:52:10,133 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-12 11:59:08,858 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-12 11:59:08,862 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-12 12:03:20,008 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-12 12:03:20,013 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-12 12:05:04,861 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 12:05:04,890 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 12:12:46,750 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-12 12:12:46,752 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-12 12:12:46,754 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-12 12:15:10,628 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-12 12:15:10,638 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-12 12:15:42,237 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 12:15:42,245 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 12:17:29,441 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-12 12:17:29,442 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-12 12:17:29,444 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-12 12:19:57,205 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 12:19:57,333 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 12:24:05,759 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-12 12:24:05,770 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-12 12:24:22,786 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 12:24:22,788 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 12:25:10,240 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 12:25:10,360 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 12:26:10,435 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 12:26:10,482 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 14:49:08,161 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-12 14:49:08,163 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-12 14:49:26,043 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-12 14:49:26,096 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-12 14:49:26,110 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-14 09:53:40,498 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-14 09:53:41,802 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-14 10:39:40,520 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-14 10:39:40,523 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'running', 'status_code': 4} === - src.services.controller - get_status - 82 - MainThread
+2025-12-14 10:42:55,909 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-14 10:42:55,914 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-14 10:42:55,915 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-14 10:44:25,227 - INFO - === CONTROLLER: Starting install request === - src.services.controller - install_service - 29 - MainThread
+2025-12-14 10:44:25,230 - INFO - Current service status: {'installed': True, 'status': 'running', 'status_code': 4} - service_manager - install_service - 160 - MainThread
+2025-12-14 10:44:25,237 - INFO - Service already installed, returning early - service_manager - install_service - 162 - MainThread
+2025-12-14 10:44:25,241 - INFO - === CONTROLLER: Service manager returned: Service is already installed === - src.services.controller - install_service - 31 - MainThread
+2025-12-14 10:44:25,243 - INFO - === CONTROLLER: Returning success response === - src.services.controller - install_service - 41 - MainThread
+2025-12-14 10:44:31,183 - INFO - === CONTROLLER: Starting service start request === - src.services.controller - start_service - 101 - MainThread
+2025-12-14 10:44:31,189 - INFO - === CONTROLLER: Service manager returned: Service is already running === - src.services.controller - start_service - 103 - MainThread
+2025-12-14 10:44:37,044 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-14 10:44:37,046 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 312 - MainThread
+2025-12-14 10:44:37,049 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-14 10:53:01,433 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-14 10:53:01,440 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-14 10:53:45,308 - INFO - === CONTROLLER: Starting install request === - src.services.controller - install_service - 29 - MainThread
+2025-12-14 10:53:45,311 - INFO - =====Current service status: {'installed': True, 'status': 'running', 'status_code': 4} - service_manager - install_service - 160 - MainThread
+2025-12-14 10:53:45,313 - INFO - Service already installed, returning early - service_manager - install_service - 162 - MainThread
+2025-12-14 10:53:45,318 - INFO - === CONTROLLER: Service manager returned: Service is already installed === - src.services.controller - install_service - 31 - MainThread
+2025-12-14 10:53:45,329 - INFO - === CONTROLLER: Returning success response === - src.services.controller - install_service - 41 - MainThread
+2025-12-14 10:55:12,258 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-14 10:55:12,262 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2025-12-14 10:55:23,476 - INFO - === CONTROLLER: Starting service start request === - src.services.controller - start_service - 101 - MainThread
+2025-12-14 10:55:23,479 - INFO - =====Current service status: {'installed': True, 'status': 'running', 'status_code': 4} - service_manager - start_service - 266 - MainThread
+2025-12-14 10:55:23,480 - INFO - === CONTROLLER: Service manager returned: Service is already running === - src.services.controller - start_service - 103 - MainThread
+2025-12-14 10:56:52,065 - INFO - === CONTROLLER: Starting service stop request === - src.services.controller - stop_service - 124 - MainThread
+2025-12-14 10:56:52,067 - INFO - =====Current service status: {'installed': True, 'status': 'running', 'status_code': 4} - service_manager - stop_service - 304 - MainThread
+2025-12-14 10:56:52,069 - INFO - Stopping service: WAZAPOS_TEST - service_manager - stop_service - 315 - MainThread
+2025-12-14 10:56:52,071 - ERROR - === CONTROLLER: Error stopping service: Failed to stop service: (5, 'OpenSCManager', 'Accès refusé.') === - src.services.controller - stop_service - 139 - MainThread
+2025-12-14 10:59:26,141 - INFO - === CONTROLLER: Getting service status === - src.services.controller - get_status - 80 - MainThread
+2025-12-14 10:59:26,144 - INFO - === CONTROLLER: Service status: {'installed': True, 'status': 'stopped', 'status_code': 1} === - src.services.controller - get_status - 82 - MainThread
+2025-12-14 11:02:53,472 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2025-12-14 11:02:53,476 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2026-01-13 09:43:10,367 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2026-01-13 09:43:10,536 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
+2026-03-04 08:56:48,545 - INFO - Creating app.db... - __main__ - <module> - 26 - MainThread
+2026-03-04 08:56:48,643 - INFO - Created app.db - __main__ - <module> - 28 - MainThread
