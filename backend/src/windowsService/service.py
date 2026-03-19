@@ -17,7 +17,8 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Any, Dict, List, Optional, TextIOWrapper
+from typing import Any, Dict, List, Optional
+from io import TextIOWrapper
 
 # Setup Logging and Folders
 BASE_FOLDER = r"C:\poswaza\temp"
