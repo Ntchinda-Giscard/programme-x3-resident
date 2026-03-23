@@ -4,7 +4,7 @@ const nextConfig = {
   output: "export",
 
   // CRITICAL: Use relative paths for assets
-  assetPrefix: ".",
+  // assetPrefix: ".",
 
   // Disable image optimization for static export
   images: {
