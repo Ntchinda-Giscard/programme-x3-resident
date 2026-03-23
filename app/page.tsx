@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Toaster } from "@/components/ui/toaster";
+import { Toast } from "@/components/ui/toast";
 import { FolderInput, FolderOutput, Save } from "lucide-react";
 import { useFolderStore } from "@/lib/store";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -65,10 +65,10 @@ export default function FolderPickerPage() {
     <div className="min-h-screen bg-background pb-12">
       <Tabs defaultValue="dossier" className="w-full">
         <MainNavbar />
-        
+
         <div className="mx-auto max-w-4xl space-y-6 pt-6 px-6 text-foreground">
           <ServiceControls />
-          
+
           <TabsContent value="dossier">
             <Card className="mb-4">
               <CardHeader>
@@ -116,7 +116,7 @@ export default function FolderPickerPage() {
               </Button>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="database">
             <DatabaseConnectionForm />
           </TabsContent>
@@ -130,7 +130,7 @@ export default function FolderPickerPage() {
           </TabsContent>
         </div>
       </Tabs>
-      <Toaster />
+      <Toast />
       <StatusBar />
     </div>
   );
