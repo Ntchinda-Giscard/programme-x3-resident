@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Toast } from "@/components/ui/toast";
+// import { Toast } from "@/components/ui/toast";
 import { FolderInput, FolderOutput, Save } from "lucide-react";
 import { useFolderStore } from "@/lib/store";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -130,7 +130,7 @@ export default function FolderPickerPage() {
           </TabsContent>
         </div>
       </Tabs>
-      <Toast />
+      {/* <Toast /> */}
       <StatusBar />
     </div>
   );
