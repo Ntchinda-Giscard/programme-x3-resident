@@ -1,6 +1,5 @@
 /.venv
 *.db
-*.txt
 /build
 /dist
 /__pycache__
