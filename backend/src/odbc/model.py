@@ -1,8 +1,7 @@
 # schemas.py
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 
-from sqlalchemy import Column
 
 class DatabaseServerAdd(BaseModel):
     odbc_source: Optional[str] = None
